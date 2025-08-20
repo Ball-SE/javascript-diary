@@ -14,7 +14,10 @@ import { category } from "../../data/category";
 import { useState } from "react";
 
 function ArticleSection() {
-  const [categories, setCategories] = useState(category);
+  const [allCategories] = useState(category); // รายการ category ทั้งหมด
+  const [selectedCategory, setSelectedCategory] = useState(""); // category ที่ user เลือก
+  
+
 
   return (
     <div className="w-full h-[236px] sm:w-[1200px] sm:h-[2034px] gap-[48px] mx-auto sm:mt-[80px]">
@@ -24,8 +27,11 @@ function ArticleSection() {
 
       <div className=" bg-[#EFEEEB] sm:rounded-[16px] w-full h-[172px] p-[16px] gap-[16px] sm:w-[1200px] sm:h-[80px] flex flex-col sm:flex-row justify-center sm:justify-between pt-[16px] pr-[24px] pb-[16px] pl-[24px]">
         <div className="hidden w-full h-[48px] gap-[8px] sm:flex flex-row items-center">
-          {categories.map((category, index) => (
-            <button key={index} className=" w-[113px] h-[48px] rounded-[8px] pt-[12px] pr-[20px] pb-[12px] pl-[20px] gap-[10px] text-[#43403B] font-medium text-base">
+          {allCategories.map((category, index) => (
+            <button 
+            key={index} 
+            onClick={() => setSelectedCategory(category)} 
+            className={`w-[113px] h-[48px] rounded-[8px] pt-[12px] pr-[20px] pb-[12px] pl-[20px] gap-[10px] text-[#43403B] font-medium text-base ${selectedCategory === category ? "bg-[#DAD6D1]" : ""}`}>
                 {category}
             </button>
           ))}
@@ -50,7 +56,7 @@ function ArticleSection() {
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Categories</SelectLabel>
-              {categories.map((category, index) => (
+              {allCategories.map((category, index) => (
                 <SelectItem key={index} value={category}>{category}</SelectItem>
               ))}
             </SelectGroup>
