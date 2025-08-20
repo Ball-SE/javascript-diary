@@ -1,0 +1,1 @@
+export const category = ["Highlight", "Cat", "Inspiration", "General"];
