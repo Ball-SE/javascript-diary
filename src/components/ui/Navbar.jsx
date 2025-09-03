@@ -1,12 +1,17 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export function Navbar(){
-    const menuRef = useRef(null);
-    const toggleHam = (e) => {
-      e.currentTarget.classList.toggle('change');
-      menuRef.current.classList.toggle('hidden');
-    };
+    // const menuRef = useRef(null);
+    // const toggleHam = (e) => {
+    //   e.currentTarget.classList.toggle('change');
+    //   menuRef.current.classList.toggle('hidden');
+    // };
     
+    const [menu, setMenu] = useState(false);
+    const toggleMenu = () => {
+      setMenu(!menu);
+    };
+
     return (
       <nav className="bg-[#F9F8F6] border border-[#DAD6D1] w-full h-20 pt-4 pr-8 pb-4 pl-8 flex justify-between items-center relative">
         <div className="text-2xl font-bold text-gray-800">
@@ -23,18 +28,17 @@ export function Navbar(){
           </button>
 
           {/* Hamburger Menu */}
-          <div className="sm:hidden flex flex-col gap-1 cursor-pointer" onClick={toggleHam}>
+          <div className="sm:hidden flex flex-col gap-1 cursor-pointer" onClick={toggleMenu}>
             <div className="bar1 w-6 h-1 bg-black"></div>
             <div className="bar2 w-6 h-1 bg-black"></div>
             <div className="bar3 w-6 h-1 bg-black"></div>
           </div>
         </div>
-        
-        {/* Mobile Menu */}
-        <div
+        {menu ? (
+          <div
           id="mobileMenu"
-          ref={menuRef}
-          className="hidden absolute top-full left-0 right-0 bg-[#F9F8F6] drop-shadow-xl pt-8 pb-8 px-6 z-50">
+          // ref={menuRef}
+          className="sm:hidden absolute top-full left-0 right-0 bg-[#F9F8F6] drop-shadow-xl pt-8 pb-8 px-6 z-50">
           <div className="flex flex-col gap-4 items-center">
             <button className="w-full max-w-[327px] h-[48px] bg-white border border-[#75716B] rounded-full text-[#26231E] text-base font-medium">
               Log in
@@ -43,7 +47,8 @@ export function Navbar(){
               Sign up
             </button>
           </div>
-        </div>
+          </div>
+        ) : null}
       </nav>
     )
   }

@@ -1,13 +1,50 @@
-import { useState } from "react";
-import { products } from "../../data/post-data";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-function BlogCard() {
-  // const { category, title, description, image, author, date } = props;
-  const [posts, setPosts] = useState(products);
+function BlogCard({ categories }) {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ใช้ categories prop ที่ส่งมาจาก parent component
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      setPosts(categories);
+      setLoading(false);
+    }
+  }, [categories]);
+
+  // Function to format date in readable format
+  const formatDateReadable = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return dateString;
+      }
+      
+      const options = { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      };
+      
+      return date.toLocaleDateString('en-US', options);
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full pt-[20px]">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full pt-[20px]">
-    {posts.map((post,index) => (
+    {posts && posts.length > 0 ? 
+      posts.map((post, index) => (
       <div className="flex flex-col gap-4 p-[10px]" key={index}>
         <a href="#" className="relative h-[212px] sm:h-[360px]">
           <img
@@ -38,11 +75,13 @@ function BlogCard() {
             />
             <span>{post.author}</span>
             <span className="mx-2 text-gray-300">|</span>
-            <span>{post.date}</span>
+            <span>{formatDateReadable(post.date)}</span>
           </div>
         </div>
       </div>
-    ))}
+    )):(
+      <p>No posts found in this category.</p>
+    )}
     </div>
   );
 }

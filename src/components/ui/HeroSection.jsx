@@ -16,7 +16,7 @@ export function HeroSection(){
           Discover a World of Knowledge at Your Fingertips. Your Daily Dose of Inspiration and Information.
         </p>
         </div>
-        <img src="src/assets/images/image.jpg" alt="Hero Image" className="w-[400px] h-[453px] rounded-2xl" />
+        <img src="src/assets/images/image.jpg" alt="Hero Image" className="w-[400px] h-[453px] rounded-2xl object-cover" />
         
         <div className="w-[347px] h-[284px] gap-[12px] ">
           <div>
