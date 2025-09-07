@@ -1,7 +1,7 @@
-import {Navbar} from '../components/ui/Navbar'
-import {Footer} from '../components/ui/Footer'
+import {Navbar} from '../components/ui/Navbar.jsx'
+import {Footer} from '../components/ui/Footer.jsx'
 import {useNavigate} from 'react-router-dom'
-import SignUpForm from '../components/ui/SignUpForm'
+import SignUpForm from '../components/ui/SignUpForm.jsx'
 
 function SignUp(){
     const navigate = useNavigate();

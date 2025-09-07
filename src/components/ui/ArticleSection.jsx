@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import BlogCard from "./BlogCard";
+import { Input } from "@/components/ui/input.jsx";
+import BlogCard from "./BlogCard.jsx";
 import {
   Select,
   SelectContent,
@@ -9,7 +9,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select.jsx";
 import { category } from "../../data/category";
 import { useState } from "react";
 import { usePosts } from "../../hooks/usePosts";

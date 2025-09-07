@@ -1,7 +1,7 @@
-import {Navbar} from '../components/ui/Navbar'
-import {HeroSection} from '../components/ui/HeroSection'
-import ArticleSection from '../components/ui/ArticleSection'
-import {Footer} from '../components/ui/Footer'
+import {Navbar} from '../components/ui/Navbar.jsx'
+import {HeroSection} from '../components/ui/HeroSection.jsx'
+import ArticleSection from '../components/ui/ArticleSection.jsx'
+import {Footer} from '../components/ui/Footer.jsx'
 
 function HomePage(){
     return (

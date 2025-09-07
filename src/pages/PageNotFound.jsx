@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Navbar } from "../components/ui/Navbar";
-import { Footer } from "../components/ui/Footer";
+import { Navbar } from "../components/ui/Navbar.jsx";
+import { Footer } from "../components/ui/Footer.jsx";
 
 function PageNotFound() {
   return (

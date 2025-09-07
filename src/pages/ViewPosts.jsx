@@ -2,8 +2,8 @@ import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
-import { Navbar } from "../components/ui/Navbar";
-import { Footer } from "../components/ui/Footer";
+import { Navbar } from "../components/ui/Navbar.jsx";
+import { Footer } from "../components/ui/Footer.jsx";
 import heroImage from "../assets/images/image.jpg";
 
 function ViewPosts() {
