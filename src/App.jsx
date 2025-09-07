@@ -1,18 +1,24 @@
 import './App.css'
-import {Navbar} from './components/ui/Navbar.jsx'
-import {HeroSection} from './components/ui/HeroSection.jsx'
-import {Footer} from './components/ui/Footer.jsx'
-import ArticleSection from './components/ui/ArticleSection.jsx'
+import {BrowserRouter, Routes, Route} from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import SignUp from './pages/SignUpPage'
+import LogInPage from './pages/LogInPage'
+import ViewPosts from './pages/ViewPosts'
+import PageNotFound from './pages/PageNotFound'
 
 function App() {
 
   return (
-    <div className="bg-[#F9F8F6]">
-      <Navbar />
-      <HeroSection />
-      <ArticleSection />
-      <Footer />
-    </div>
+
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<LogInPage />} />
+        <Route path="/post/:postId" element={<ViewPosts />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </BrowserRouter>
 
   )
 }

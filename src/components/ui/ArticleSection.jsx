@@ -11,48 +11,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { category } from "../../data/category";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { usePosts } from "../../hooks/usePosts";
+import { usePagination } from "../../hooks/usePagination";
 
 function ArticleSection() {
   const [allCategories] = useState(category);
-  const [selectedCategory, setSelectedCategory] = useState("all"); // เปลี่ยนจาก "" เป็น "all"
-  const [categories, setCategories] = useState([]);
-  const [allPosts, setAllPosts] = useState([]);
-
-  // ดึงข้อมูลทั้งหมดครั้งแรก
-  const getAllPosts = async () => {
-    try {
-      const response = await axios.get("https://blog-post-project-api.vercel.app/posts");
-      setAllPosts(response.data.posts);
-      setCategories(response.data.posts);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-    }
-  };
-
-  // Filter posts ตาม category ที่เลือก
-  const filterPostsByCategory = (category) => {
-    if (!category || category === "all") {
-      setCategories(allPosts); // แสดงทั้งหมด
-    } else {
-      const filtered = allPosts.filter(post => post.category === category);
-      setCategories(filtered);
-    }
-  };
-
-  useEffect(() => {
-    getAllPosts();
-  }, []);
-
-  useEffect(() => {
-    filterPostsByCategory(selectedCategory);
-  }, [selectedCategory, allPosts]);
+  
+  // ใช้ custom hooks
+  const { 
+    filteredPosts, 
+    selectedCategory, 
+    loading: postsLoading, 
+    error: postsError, 
+    handleCategoryChange 
+  } = usePosts();
+  
+  const { 
+    posts: paginatedPosts, 
+    hasMore, 
+    loading: paginationLoading, 
+    error: paginationError, 
+    handleLoadMore 
+  } = usePagination(selectedCategory);
 
   // Handle select change สำหรับมือถือ
   const handleSelectChange = (value) => {
-    setSelectedCategory(value);
+    handleCategoryChange(value);
   };
+
+  // ใช้ filteredPosts สำหรับการแสดงผล (ไม่ใช้ pagination)
+  const displayPosts = filteredPosts;
 
   return (
     <div className="w-full h-[236px] sm:w-[1200px] sm:h-[2034px] gap-[48px] mx-auto sm:mt-[80px]">
@@ -62,16 +51,11 @@ function ArticleSection() {
 
       <div className=" bg-[#EFEEEB] sm:rounded-[16px] w-full h-[172px] p-[16px] gap-[16px] sm:w-[1200px] sm:h-[80px] flex flex-col sm:flex-row justify-center sm:justify-between pt-[16px] pr-[24px] pb-[16px] pl-[24px]">
         <div className="hidden w-full h-[48px] gap-[8px] sm:flex flex-row items-center">
-          <button 
-            key="all" 
-            onClick={() => setSelectedCategory("all")} 
-            className={`w-[113px] h-[48px] rounded-[8px] pt-[12px] pr-[20px] pb-[12px] pl-[20px] gap-[10px] text-[#43403B] font-medium text-base ${selectedCategory === "all" ? "bg-[#DAD6D1]" : ""}`}>
-              All
-          </button>
+          
           {allCategories.map((category, index) => (
             <button 
             key={index} 
-            onClick={() => setSelectedCategory(category)} 
+            onClick={() => handleCategoryChange(category)} 
             className={`w-[113px] h-[48px] rounded-[8px] pt-[12px] pr-[20px] pb-[12px] pl-[20px] gap-[10px] text-[#43403B] font-medium text-base ${selectedCategory === category ? "bg-[#DAD6D1]" : ""}`}>
                 {category}
             </button>
@@ -91,13 +75,12 @@ function ArticleSection() {
           <p className="sm:hidden text-[#75716B] font-medium text-base">
             Category
           </p>
-          <SelectTrigger className="sm:hidden w-full h-[48px] rouded-[8px] border pt-[12px] pr-[12px] pb-[12px] pl-[16px] gap-[4px] bg-[#FFFFFF] font-medium text-base text-[#75716B]">
+          <SelectTrigger className="sm:hidden w-full h-[48px] rounded-[8px] border pt-[12px] pr-[12px] pb-[12px] pl-[16px] gap-[4px] bg-[#FFFFFF] font-medium text-base text-[#75716B]">
             <SelectValue placeholder="Select a Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Categories</SelectLabel>
-              <SelectItem value="all">All</SelectItem>
               {allCategories.map((category, index) => (
                 <SelectItem key={index} value={category}>{category}</SelectItem>
               ))}
@@ -106,13 +89,27 @@ function ArticleSection() {
         </Select>
       </div>
 
-      <BlogCard categories={categories} />
+      {/* แสดง loading หรือ error */}
+      {postsLoading && <div className="text-center py-8">Loading posts...</div>}
+      {postsError && <div className="text-center py-8 text-red-500">Error: {postsError}</div>}
       
-      <div className="flex justify-center mt-8">
-        <button className="h-[48px] px-8 flex justify-center items-center text-[#26231E] font-medium underline text-base">
-          View All
-        </button>
-      </div>
+      {/* แสดง posts */}
+      {!postsLoading && !postsError && (
+        <>
+          <BlogCard categories={displayPosts} />
+          {hasMore && (
+          <div className="flex justify-center mt-8">
+            <button 
+              className="hover:text-muted-foreground h-[48px] px-8 flex justify-center items-center text-[#26231E] font-medium underline text-base"
+              onClick={handleLoadMore}
+              disabled={paginationLoading}
+            >
+              {paginationLoading ? "Loading..." : "View More"}
+            </button>
+          </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
