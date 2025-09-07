@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input.jsx";
-import BlogCard from "./BlogCard.jsx";
+import { Input } from "@/components/ui/input";
+import BlogCard from "./BlogCard";
 import {
   Select,
   SelectContent,

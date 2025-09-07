@@ -1,6 +1,6 @@
-import LogInForm from '../components/ui/LogInForm.jsx';
-import {Navbar} from '../components/ui/Navbar.jsx';
-import {Footer} from '../components/ui/Footer.jsx';
+import LogInForm from '../components/ui/LoginForm';
+import {Navbar} from '../components/ui/Navbar';
+import {Footer} from '../components/ui/Footer';
 import {useNavigate} from 'react-router-dom';
 
 function LogInPage(){
