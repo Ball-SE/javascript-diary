@@ -20,8 +20,7 @@ export function Navbar(){
     return (
       <nav className="bg-[#F9F8F6] border border-[#DAD6D1] w-full h-20 pt-4 pr-8 pb-4 pl-8 flex justify-between items-center relative">
         <div className="ml-23 text-2xl font-bold text-gray-800">
-          <span className="text-gray-800">hh</span>
-          <span className="text-gray-800">.</span>
+          <a href="/"  className="text-gray-800">hh.</a>
         </div>
         {/* Desktop Menu */}
         <div className="flex gap-4 mr-23">

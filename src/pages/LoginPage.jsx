@@ -1,4 +1,4 @@
-import LogInForm from '../components/ui/LoginForm';
+import LogInForm from '../components/forms/LoginForm';
 import {Navbar} from '../components/ui/Navbar';
 import {Footer} from '../components/ui/Footer';
 import {useNavigate} from 'react-router-dom';
