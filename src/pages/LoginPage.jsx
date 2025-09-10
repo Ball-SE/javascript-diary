@@ -1,4 +1,4 @@
-import LogInForm from '../components/forms/LogInForm';
+import LogInForm from '../components/forms/LoginForm';
 import {Navbar} from '../components/ui/Navbar';
 import {Footer} from '../components/ui/Footer';
 
