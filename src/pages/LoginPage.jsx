@@ -1,13 +1,8 @@
-import LogInForm from '../components/forms/LoginForm';
+import LogInForm from '../components/forms/LogInForm';
 import {Navbar} from '../components/ui/Navbar';
 import {Footer} from '../components/ui/Footer';
-import {useNavigate} from 'react-router-dom';
 
 function LogInPage(){
-    const navigate = useNavigate();
-    const handleSignUp = () => {
-        navigate('/signup');
-    }
 
     return (
         <div className="min-h-screen bg-[#F9F8F6] flex flex-col">
