@@ -2,7 +2,7 @@ import './App.css'
 import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import SignUp from './pages/SignUpPage'
-import LogInPage from './pages/LogInPage'
+import LogInPage from './pages/LoginPage'
 import ViewPosts from './pages/ViewPosts'
 import PageNotFound from './pages/PageNotFound'
 import { Toaster } from "@/components/ui/sonner"
