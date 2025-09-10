@@ -1,5 +1,5 @@
 import { useState } from "react"
-import happyLight from "../../assets/images/Happy_light.png"
+import happyLight from "../../assets/images/happy_light.png"
 import {
     AlertDialog,
     AlertDialogContent,
