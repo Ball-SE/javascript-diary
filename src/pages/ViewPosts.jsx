@@ -1,16 +1,16 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import { Navbar } from "../components/ui/Navbar";
 import { Footer } from "../components/ui/Footer";
 import heroImage from "../assets/images/image.jpg";
-import happyLight from "../assets/images/happy_light.png";
-import copyLight from "../assets/images/Copy_light.png";
-import facebook from "../assets/images/facebook.png";
-import instagram from "../assets/images/instragram.png";
-import twitter from "../assets/images/twitter.png";
+import { FacebookButton } from "../components/buttons/FacebookButton";
+import { LinkinButton } from "../components/buttons/LinkinButton";
+import { TwitterButton } from "../components/buttons/TwitterButton";
 import ViewPostCard from "../components/cards/ViewPostCard";
+import { ClipboardButton } from "../components/buttons/ClipboardButton";
+import { LikeButton } from "../components/buttons/LikeButton";
 
 function ViewPosts() {
   const { postId } = useParams();
@@ -86,26 +86,14 @@ function ViewPosts() {
                   <div className="bg-[#EFEEEB] rounded-xl p-6">
                     <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                       {/* Like Button */}
-                      <button className="bg-white border border-[#75716B] text-[#26231E] px-6 py-3 rounded-full flex items-center hover:bg-gray-50 transition-colors duration-200 shadow-sm">
-                        <img src={happyLight} alt="Like" className="w-5 h-5 mr-3" />
-                        <span className="text-base font-medium">321</span>
-                      </button>
+                        <LikeButton post={post} />
 
                       {/* Social Share Buttons */}
                       <div className="flex items-center gap-3">
-                        <button className="bg-white border border-[#75716B] text-[#26231E] px-4 py-2 rounded-full flex items-center hover:bg-gray-50 transition-colors duration-200 shadow-sm">
-                          <img src={copyLight} alt="Copy link" className="w-4 h-4 mr-2" />
-                          <span className="text-sm font-medium">Copy link</span>
-                        </button>
-                        <button className="">
-                          <img src={facebook} alt="Share on Facebook" className="w-10 h-10" />
-                        </button>
-                        <button className="">
-                          <img src={instagram} alt="Share on Instagram" className="w-10 h-10" />
-                        </button>
-                        <button className="">
-                          <img src={twitter} alt="Share on Twitter" className="w-10 h-10" />
-                        </button>
+                        <ClipboardButton postId={postId}/>
+                        <FacebookButton postId={postId}/>
+                        <LinkinButton postId={postId}/>
+                        <TwitterButton postId={postId}/>
                       </div>
                     </div>
                   </div>
