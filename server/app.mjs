@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import connectionPool from "./utils/db.mjs";
+import { postValidations } from "./middlewares/postValidations.js";
 
 const app = express();
 const port = process.env.PORT || 4001;
@@ -21,15 +22,9 @@ app.get("/profiles", (req, res) => {
   });
 });
 
-app.post("/assignments", async (req, res) => {
+app.post("/assignments", [postValidations], async (req, res) => {
   const { title, image, category_id, description, content, status_id } = req.body;
   const currentDate = new Date();
-
-  if (!title || !image || !category_id || !description || !content || !status_id) {
-    return res.status(400).json({
-      message: "Server could not create post because there are missing data from client",
-    });
-  }
 
   try {
     await connectionPool.query(
@@ -187,7 +182,7 @@ app.get("/posts/:postId", async (req, res) => {
   }
 });
 
-app.put("/posts/:postId", async (req, res) => {
+app.put("/posts/:postId", [postValidations], async (req, res) => {
   const { postId } = req.params;
   const { title, image, category_id, description, content, status_id } = req.body;
   const currentDate = new Date();
