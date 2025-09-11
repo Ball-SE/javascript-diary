@@ -7,12 +7,15 @@ import ViewPosts from './pages/ViewPosts'
 import PageNotFound from './pages/PageNotFound'
 import { Toaster } from "@/components/ui/sonner"
 import ScrollToTop from "./components/scroll/ScrollToTop"
+import { AuthProvider } from './context/authentication.jsx'
+import jwtInterceptor from './utils/jwtInterceptor.js'
+
+jwtInterceptor();
 
 function App() {
 
   return (
-
-    <BrowserRouter>
+    <AuthProvider>
       <Toaster />
       <ScrollToTop />
       <Routes>
@@ -21,8 +24,8 @@ function App() {
         <Route path="/login" element={<LogInPage />} />
         <Route path="/post/:postId" element={<ViewPosts />} />
         <Route path="*" element={<PageNotFound />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+    </AuthProvider>
 
   )
 }

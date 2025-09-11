@@ -3,8 +3,12 @@ import * as pg from "pg";
 const { Pool } = pg.default;
 
 const connectionPool = new Pool({
-  connectionString:
-    "postgresql://postgres:0864072737@localhost:5432/personal-blog",
+    host: 'localhost',
+    port: 5432,
+    database: 'personal-blog',
+    user: 'postgres',
+    password: '0864072737',
+    ssl: false, // เพิ่มบรรทัดนี้
 });
 
 export default connectionPool;

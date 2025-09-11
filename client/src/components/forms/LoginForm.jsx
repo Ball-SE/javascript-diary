@@ -1,6 +1,7 @@
 import {useNavigate} from 'react-router-dom';
 import { useState } from 'react';
 import { validateLogIn } from '../../utils/validation.js';
+import { useAuth } from '../../context/authentication.jsx';
 
 function LogInForm(){
 
@@ -9,7 +10,10 @@ function LogInForm(){
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
 
+    const { login } = useAuth();
+
     const navigate = useNavigate();
+
     const handleSignUp = (event) => {
         event.preventDefault();
         navigate('/signup');
@@ -23,7 +27,7 @@ function LogInForm(){
             setEmailError, 
             setPasswordError);
         if (isValid) {
-            alert('Log in successful');
+            login({email, password});
         }
     }
 

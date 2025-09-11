@@ -103,7 +103,7 @@ postRoutes.get("/", async (req, res) => {
       }
       // 9) Return ตัว Response กลับไปหา Client ว่าสร้างสำเร็จ
       return res.status(200).json(results);
-    } catch {
+    } catch (error) {
       return res.status(500).json({
         message: "Server could not read post because database issue",
       });
