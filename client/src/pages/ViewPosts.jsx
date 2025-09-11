@@ -11,6 +11,7 @@ import { TwitterButton } from "../components/buttons/TwitterButton";
 import ViewPostCard from "../components/cards/ViewPostCard";
 import { ClipboardButton } from "../components/buttons/ClipboardButton";
 import { LikeButton } from "../components/buttons/LikeButton";
+import { CommentForm } from "../components/forms/CommentForm";
 
 function ViewPosts() {
   const { postId } = useParams();
@@ -38,7 +39,7 @@ function ViewPosts() {
       <Navbar />
         {/* รูปภาพ */}
         <img
-            className=" w-full max-w-7xl mx-auto h-[400px] object-cover rounded-lg m-8"
+            className=" w-full max-w-7xl mx-auto aspect-[1200/587] h-full object-cover rounded-lg m-8"
             src={post.image}
             alt={post.title}
         />
@@ -101,20 +102,7 @@ function ViewPosts() {
 
                 {/* Comment Section */}
                 <div className="mb-8 flex flex-col gap-4">
-                  <h3 className="text-lg font-semibold text-[#26231E] mb-4">
-                    Comments
-                  </h3>
-                  <textarea 
-                    placeholder="What are your thoughts?" 
-                    className="w-full text-base p-4 font-medium border border-[#DAD6D1] bg-[#FFFFFF] rounded-lg resize-none min-h-[120px] focus:outline-none focus:ring-2 focus:ring-[#26231E] focus:border-transparent"
-                    rows="4"
-                  />
-                  <div className="flex justify-end">
-                    <button className="bg-[#26231E] text-white text-base font-medium px-6 py-2 rounded-full hover:bg-[#1a1a1a] transition-colors">
-                      Send
-                    </button>
-                  </div>
-
+                  <CommentForm />
                   <ViewPostCard />
                 </div>
               </div>
