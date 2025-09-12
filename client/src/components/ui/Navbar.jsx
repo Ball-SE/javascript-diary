@@ -45,7 +45,7 @@ export function Navbar(){
     return (
       <nav className="bg-[#F9F8F6] border border-[#DAD6D1] w-full h-20 pt-4 pr-8 pb-4 pl-8 flex justify-between items-center relative">
         <div className="ml-23 text-2xl font-bold text-gray-800">
-          <a href="/"  className="text-gray-800">hh.</a>
+          <a href="/"  className="text-gray-800">hh<span className="text-green-500">.</span></a>
         </div>
         
         {/* Desktop Menu */}
