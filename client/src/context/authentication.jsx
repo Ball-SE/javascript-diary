@@ -78,20 +78,27 @@ function AuthProvider(props) {
   // ลงทะเบียนผู้ใช้
   const register = async (data) => {
     try {
+      console.log("📝 Registering with data:", data);
       setState((prevState) => ({ ...prevState, loading: true, error: null }));
-      await axios.post(
+      
+      const response = await axios.post(
         "http://localhost:4001/auth/register",
         data
       );
+      
+      console.log("✅ Registration successful:", response.data);
       setState((prevState) => ({ ...prevState, loading: false, error: null }));
-      navigate("/");
+      navigate("/login");
     } catch (error) {
+      console.error("❌ Registration failed:", error.response?.data || error.message);
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || "Registration failed";
+      
       setState((prevState) => ({
         ...prevState,
         loading: false,
-        error: error.response?.data?.error || "Registration failed",
+        error: errorMessage,
       }));
-      return { error: state.error };
+      return { error: errorMessage };
     }
   };
 
@@ -104,6 +111,122 @@ function AuthProvider(props) {
 
   const isAuthenticated = Boolean(state.user);
 
+  // เพิ่มฟังก์ชัน updateProfile
+  const updateProfile = async (data) => {
+    try {
+      setState((prevState) => ({ ...prevState, loading: true, error: null }));
+      const response = await axios.put(
+        "http://localhost:4001/auth/update-profile",
+        data
+      );
+      
+      // อัปเดต user state ด้วยข้อมูลใหม่
+      setState((prevState) => ({ 
+        ...prevState, 
+        user: response.data.user,
+        loading: false, 
+        error: null 
+      }));
+      
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || "Failed to update profile";
+      setState((prevState) => ({
+        ...prevState,
+        loading: false,
+        error: errorMessage,
+      }));
+      return { success: false, error: errorMessage };
+    }
+  };
+
+    // เพิ่มฟังก์ชัน uploadProfilePicture
+  const uploadProfilePicture = async (file) => {
+    try {
+      console.log("🔍 File to upload:", file); // เพิ่มบรรทัดนี้
+      console.log("🔍 File type:", file.type); // เพิ่มบรรทัดนี้
+      console.log("🔍 File size:", file.size); // เพิ่มบรรทัดนี้
+      
+      setState((prevState) => ({ ...prevState, loading: true, error: null }));
+      
+      const formData = new FormData();
+      formData.append("profilePicture", file);
+      
+      // Debug FormData
+      console.log("🔍 FormData entries:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ':', pair[1]);
+      }
+
+      const token = localStorage.getItem("token");
+      
+      // ใช้ fetch แทน axios เพื่อหลีกเลี่ยง interceptor
+      const response = await fetch(
+        "http://localhost:4001/auth/upload-profile-picture",
+        {
+          method: "POST",
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            // ไม่ต้องระบุ Content-Type ให้ browser ตั้งค่า boundary เอง
+          },
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to upload profile picture");
+      }
+      
+      // อัปเดต user state ด้วยข้อมูลใหม่
+      setState((prevState) => ({ 
+        ...prevState, 
+        user: data.user,
+        loading: false, 
+        error: null 
+      }));
+      
+      return { success: true, profilePic: data.profilePic };
+    } catch (error) {
+      console.error("Upload error:", error);
+      const errorMessage = error.message || "Failed to upload profile picture";
+      setState((prevState) => ({
+        ...prevState,
+        loading: false,
+        error: errorMessage,
+      }));
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // เพิ่มฟังก์ชัน resetPassword
+  const resetPassword = async (oldPassword, newPassword) => {
+    try {
+      setState((prevState) => ({ ...prevState, loading: true, error: null }));
+      const response = await axios.put(
+        "http://localhost:4001/auth/reset-password",
+        { oldPassword, newPassword }
+      );
+      
+      setState((prevState) => ({ 
+        ...prevState, 
+        loading: false, 
+        error: null 
+      }));
+      
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || "Failed to reset password";
+      setState((prevState) => ({
+        ...prevState,
+        loading: false,
+        error: errorMessage,
+      }));
+      return { success: false, error: errorMessage };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -113,6 +236,9 @@ function AuthProvider(props) {
         register,
         isAuthenticated,
         fetchUser,
+        updateProfile,
+        uploadProfilePicture,
+        resetPassword,
       }}
     >
       {props.children}
@@ -120,8 +246,8 @@ function AuthProvider(props) {
   );
 }
 
-// Hook สำหรับใช้งาน AuthContext
-const useAuth = () => React.useContext(AuthContext);
+// Export AuthContext เพื่อให้ useAuth hook สามารถใช้งานได้
+export { AuthContext };
 
-export { AuthProvider, useAuth };
+export { AuthProvider };
 

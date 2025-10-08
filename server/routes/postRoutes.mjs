@@ -1,8 +1,25 @@
 import { Router } from "express";
 import { postValidations } from "../middlewares/postValidations.mjs";
 import connectionPool from "../utils/db.mjs";
+import multer from "multer";
+import protectAdmin from "../middlewares/protectAdmin.mjs";
+import { createClient } from "@supabase/supabase-js";
+
+// เชื่อมต่อ Supabase Client
+const supabase = createClient(
+  process.env.SUPABASE_URL ,
+  process.env.SUPABASE_ANON_KEY
+);
 
 const postRoutes = Router();
+
+// ตั้งค่า Multer สำหรับการอัปโหลดไฟล์
+const multerUpload = multer({ storage: multer.memoryStorage() });
+
+// กำหนดฟิลด์ที่จะรับไฟล์ (สามารถรับได้หลายฟิลด์)
+const imageFileUpload = multerUpload.fields([
+  { name: "imageFile", maxCount: 1 },
+]);
 
 postRoutes.get("/", async (req, res) => {
     // ลอจิกในอ่านข้อมูลโพสต์ทั้งหมดในระบบ
@@ -22,7 +39,7 @@ postRoutes.get("/", async (req, res) => {
   
       // 3) เขียน Query เพื่อ Insert ข้อมูลโพสต์ ด้วย Connection Pool
       let query = `
-        SELECT posts.id, posts.image, categories.name AS category, posts.title, posts.description, posts.date, posts.content, statuses.status, posts.likes_count
+        SELECT posts.id, posts.image, categories.name AS category, posts.title, posts.description, posts.date, posts.content, statuses.status, posts.status_id, posts.likes_count
         FROM posts
         INNER JOIN categories ON posts.category_id = categories.id
         INNER JOIN statuses ON posts.status_id = statuses.id
@@ -109,13 +126,67 @@ postRoutes.get("/", async (req, res) => {
       });
     }
 });
+
+// Route สำหรับการสร้างโพสต์ใหม่
+postRoutes.post("/", [imageFileUpload, protectAdmin], async (req, res) => {
+  try {
+    // 1) รับข้อมูลจาก request body และไฟล์ที่อัปโหลด
+    const newPost = req.body;
+    const file = req.files.imageFile[0];
+
+    // 2) กำหนด bucket และ path ที่จะเก็บไฟล์ใน Supabase
+    const bucketName = "my-personal-blog";
+    const filePath = `posts/${Date.now()}_${file.originalname}`; // สร้าง path ที่ไม่ซ้ำกัน
+
+    // 3) อัปโหลดไฟล์ไปยัง Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false, // ป้องกันการเขียนทับไฟล์เดิม
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    // 4) ดึง URL สาธารณะของไฟล์ที่อัปโหลด
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(bucketName).getPublicUrl(data.path);
+
+    // 5) บันทึกข้อมูลโพสต์ลงในฐานข้อมูล
+    const query = `INSERT INTO posts (title, image, category_id, description, content, status_id)
+      VALUES ($1, $2, $3, $4, $5, $6)`;
+
+    const values = [
+      newPost.title,
+      publicUrl, // เก็บ URL ของรูปภาพ
+      parseInt(newPost.category_id),
+      newPost.description,
+      newPost.content,
+      parseInt(newPost.status_id),
+    ];
+
+    await connectionPool.query(query, values);
+
+    // 6) ส่งผลลัพธ์กลับไปยัง client
+    return res.status(201).json({ message: "Created post successfully" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Server could not create post",
+      error: err.message,
+    });
+  }
+});
   
 postRoutes.get("/:postId", async (req, res) => {
     const { postId } = req.params;
   
     try {
       const result = await connectionPool.query(
-        "SELECT * FROM posts WHERE id = $1", 
+        `SELECT * FROM posts WHERE id = $1`, 
         [
           postId
         ]);
@@ -145,7 +216,7 @@ postRoutes.put("/:postId", [postValidations], async (req, res) => {
   
     try {
       const updatedResult = await connectionPool.query(
-        "UPDATE posts SET title = $1, image = $2, category_id = $3, description = $4, content = $5, status_id = $6, date = $7 WHERE id = $8 RETURNING *",
+        `UPDATE posts SET title = $1, image = $2, category_id = $3, description = $4, content = $5, status_id = $6, date = $7 WHERE id = $8 RETURNING *`,
         [
           title, 
           image, 
@@ -179,7 +250,7 @@ postRoutes.delete("/:postId", async (req, res) => {
   
     try {
       const deletedResult = await connectionPool.query(
-        "DELETE FROM posts WHERE id = $1 RETURNING *",
+        `DELETE FROM posts WHERE id = $1 RETURNING *`,
         [postId]
       );
   
@@ -190,7 +261,7 @@ postRoutes.delete("/:postId", async (req, res) => {
       }
   
       await connectionPool.query(
-        "DELETE FROM comments WHERE post_id = $1",
+        `DELETE FROM comments WHERE post_id = $1`,
         [postId]
       );
   
@@ -202,6 +273,24 @@ postRoutes.delete("/:postId", async (req, res) => {
         message: "Server could not delete post because database connection",
       });
     }
+});
+
+postRoutes.get("/categories", async (req, res) => {
+  try {
+      const result = await connectionPool.query("SELECT * FROM categories");
+      res.status(200).json({ categories: result.rows });
+  } catch (error) {
+      res.status(500).json({ message: "Server could not read categories" });
+  }
+});
+
+postRoutes.get("/statuses", async (req, res) => {
+  try {
+      const result = await connectionPool.query("SELECT * FROM statuses");
+      res.status(200).json({ statuses: result.rows });
+  } catch (error) {
+      res.status(500).json({ message: "Server could not read statuses" });
+  }
 });
 
 export default postRoutes;

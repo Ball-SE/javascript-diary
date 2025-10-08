@@ -1,7 +1,7 @@
 import {useNavigate} from 'react-router-dom';
 import { useState } from 'react';
 import { validateLogIn } from '../../utils/validation.js';
-import { useAuth } from '../../context/authentication.jsx';
+import { useAuth } from '../../hooks/useAuth';
 
 function LogInForm(){
 

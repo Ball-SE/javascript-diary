@@ -10,7 +10,8 @@ assignmentsRoutes.post("/", [postValidations], async (req, res) => {
   
     try {
       await connectionPool.query(
-        "INSERT INTO posts (title, image, category_id, description, content, status_id, date) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        `INSERT INTO posts (title, image, category_id, description, content, status_id, date) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [ 
           title, 
           image, 
