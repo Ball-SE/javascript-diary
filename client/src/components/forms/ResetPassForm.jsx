@@ -1,17 +1,98 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import moodeng from "../../assets/images/moodeng.png";
+import { useAuth } from "../../hooks/useAuth";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
+import { toast } from "sonner";
 
 export function ResetPassForm() {
   const navigate = useNavigate();
+  const { state, resetPassword } = useAuth();
+  const [formData, setFormData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState({});
+
   const handleProfile = () => {
     navigate("/profile");
   };
+
   const handleResetPassword = (e) => {
     e.preventDefault();
     navigate("/reset-password");
   };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // ล้าง error ของ field นั้นๆ เมื่อผู้ใช้เริ่มพิมพ์
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = "กรุณากรอกรหัสผ่านปัจจุบัน";
+    }
+
+    if (!formData.newPassword) {
+      newErrors.newPassword = "กรุณากรอกรหัสผ่านใหม่";
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "กรุณายืนยันรหัสผ่านใหม่";
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = "รหัสผ่านไม่ตรงกัน";
+    }
+
+    if (formData.currentPassword === formData.newPassword) {
+      newErrors.newPassword = "รหัสผ่านใหม่ต้องไม่เหมือนกับรหัสผ่านเดิม";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    const result = await resetPassword(
+      formData.currentPassword,
+      formData.newPassword
+    );
+
+    if (result.success) {
+      toast.success("เปลี่ยนรหัสผ่านสำเร็จ!");
+      // ล้างฟอร์ม
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      // หรือ navigate กลับไปหน้า profile
+      // navigate("/profile");
+    } else {
+      toast.error(result.error || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F9F8F6] flex flex-col">
       <Navbar />
@@ -21,16 +102,16 @@ export function ResetPassForm() {
           {/* Profile Header */}
           <div className="flex items-center gap-4 mb-2">
             <img
-              src={moodeng}
+              src={state.user?.profilePic || "/default-avatar.png"}
               alt="Profile"
               className="w-10 h-10 rounded-full object-cover"
             />
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-semibold text-[#75716B] ">
-                Moodeng ja
+              <span className="text-2xl font-semibold text-[#75716B]">
+                {state.user?.username || "User"}
               </span>
               <span className="text-[#DAD6D1]">|</span>
-              <span className="text-2xl font-semibold text-[#26231E] ">
+              <span className="text-2xl font-semibold text-[#26231E]">
                 Profile
               </span>
             </div>
@@ -52,10 +133,7 @@ export function ResetPassForm() {
                   clipRule="evenodd"
                 />
               </svg>
-              <button
-                className=" font-medium"
-                onClick={handleProfile}
-              >
+              <button className="font-medium" onClick={handleProfile}>
                 Profile
               </button>
             </div>
@@ -76,8 +154,10 @@ export function ResetPassForm() {
             </div>
           </nav>
 
-          <form className="flex flex-col w-full max-w-2xl bg-[#EFEEEB] gap-4 mb-4 p-8">
-
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col w-full max-w-2xl bg-[#EFEEEB] gap-4 mb-4 p-8"
+          >
             {/* Form Fields */}
             <div className="space-y-4">
               {/* Current password Field */}
@@ -87,9 +167,21 @@ export function ResetPassForm() {
                 </label>
                 <input
                   type="password"
+                  name="currentPassword"
+                  value={formData.currentPassword}
+                  onChange={handleInputChange}
                   placeholder="Current password"
-                  className="w-full p-3 gap-4 bg-[#FFFFFF] rounded-lg border border-[#DAD6D1] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full p-3 gap-4 bg-[#FFFFFF] rounded-lg border ${
+                    errors.currentPassword
+                      ? "border-red-500"
+                      : "border-[#DAD6D1]"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
+                {errors.currentPassword && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.currentPassword}
+                  </p>
+                )}
               </div>
 
               {/* New password Field */}
@@ -99,9 +191,19 @@ export function ResetPassForm() {
                 </label>
                 <input
                   type="password"
+                  name="newPassword"
+                  value={formData.newPassword}
+                  onChange={handleInputChange}
                   placeholder="New password"
-                  className="w-full p-3 gap-4 bg-[#FFFFFF] rounded-lg border border-[#DAD6D1] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full p-3 gap-4 bg-[#FFFFFF] rounded-lg border ${
+                    errors.newPassword ? "border-red-500" : "border-[#DAD6D1]"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
+                {errors.newPassword && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.newPassword}
+                  </p>
+                )}
               </div>
 
               {/* Confirm new password Field */}
@@ -111,19 +213,32 @@ export function ResetPassForm() {
                 </label>
                 <input
                   type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
                   placeholder="Confirm new password"
-                  className="w-full p-3 gap-4 bg-[#FFFFFF] rounded-lg border border-[#DAD6D1] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full p-3 gap-4 bg-[#FFFFFF] rounded-lg border ${
+                    errors.confirmPassword
+                      ? "border-red-500"
+                      : "border-[#DAD6D1]"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Save Button */}
             <div className="mt-6 flex justify-start">
-              <button className="px-8 py-3 bg-gray-800 text-white rounded-full hover:bg-gray-900 transition-colors"
-              type="submit"
-              onClick={handleResetPassword}
+              <button
+                className="px-8 py-3 bg-gray-800 text-white rounded-full hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={state.loading}
               >
-                Reset Password
+                {state.loading ? "กำลังเปลี่ยนรหัสผ่าน..." : "Reset Password"}
               </button>
             </div>
           </form>

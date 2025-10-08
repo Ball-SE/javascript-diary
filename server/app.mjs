@@ -10,6 +10,8 @@ const port = process.env.PORT || 4001;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use("/posts", postRoutes);
 app.use("/assignments", assignmentsRoutes);
 app.use("/auth", authRoutes);

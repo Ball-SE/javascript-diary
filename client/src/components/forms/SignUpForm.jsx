@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { validateSignUp } from '../../utils/validation.js';
-import { useAuth } from '../../context/authentication.jsx';
+import { useAuth } from '../../hooks/useAuth';
 
 function SignUpForm(){
 
@@ -23,7 +23,7 @@ function SignUpForm(){
         navigate('/login');
     };
 
-    const handleSignUp = (event) => {
+    const handleSignUp = async (event) => {
         event.preventDefault();
         const isValid = validateSignUp(
             name, 
@@ -35,7 +35,10 @@ function SignUpForm(){
             setEmailError, 
             setPasswordError);
         if (isValid) {
-            register({name, username, email, password});
+            const result = await register({name, username, email, password});
+            if (result?.error) {
+                alert("Error: " + result.error);
+            }
         }
     }
 
