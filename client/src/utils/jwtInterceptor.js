@@ -5,10 +5,8 @@ function jwtInterceptor() {
     const hasToken = Boolean(window.localStorage.getItem("token"));
 
     if (hasToken) {
-      req.headers = {
-        ...req.headers,
-        Authorization: `Bearer ${window.localStorage.getItem("token")}`,
-      };
+      // แก้ไขเป็นเพิ่ม Authorization เข้าไปแทนการ override ทั้งหมด
+      req.headers.Authorization = `Bearer ${window.localStorage.getItem("token")}`;
     }
 
     return req;
@@ -33,4 +31,3 @@ function jwtInterceptor() {
 }
 
 export default jwtInterceptor;
-

@@ -28,10 +28,10 @@ function ArticleSection() {
   } = usePosts();
   
   const { 
-    posts: paginatedPosts, 
+    // posts: paginatedPosts, 
     hasMore, 
     loading: paginationLoading, 
-    error: paginationError, 
+    // error: paginationError, 
     handleLoadMore 
   } = usePagination(selectedCategory);
 

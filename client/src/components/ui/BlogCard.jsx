@@ -30,6 +30,7 @@ function BlogCard({ categories }) {
       
       return date.toLocaleDateString('en-US', options);
     } catch (error) {
+      console.error("Error formatting date:", error);
       return dateString;
     }
   };
