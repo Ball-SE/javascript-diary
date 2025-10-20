@@ -15,6 +15,8 @@ function CreatePostComponent() {
   const [imageFile, setImageFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
+
   // ฟังก์ชันสำหรับจัดการเมื่อมีการเลือกไฟล์
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -74,7 +76,7 @@ function CreatePostComponent() {
     try {
       // ส่งข้อมูลไปยัง Backend
       await axios.post(
-        "http://localhost:4001/posts",
+        `${API_BASE_URL}/posts`,
         formData,
         {
           headers: {

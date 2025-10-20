@@ -13,6 +13,7 @@ function AuthProvider(props) {
   });
 
   const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
 
   // ดึงข้อมูลผู้ใช้โดยใช้ Supabase API
   const fetchUser = async () => {
@@ -29,7 +30,7 @@ function AuthProvider(props) {
     try {
       setState((prevState) => ({ ...prevState, getUserLoading: true }));
       const response = await axios.get(
-        "http://localhost:4001/auth/get-user"
+        `${API_BASE_URL}/auth/get-user`
       );
       setState((prevState) => ({
         ...prevState,
@@ -55,7 +56,7 @@ function AuthProvider(props) {
     try {
       setState((prevState) => ({ ...prevState, loading: true, error: null }));
       const response = await axios.post(
-        "http://localhost:4001/auth/login",
+        `${API_BASE_URL}/auth/login`,
         data
       );
       const token = response.data.access_token;
@@ -82,7 +83,7 @@ function AuthProvider(props) {
       setState((prevState) => ({ ...prevState, loading: true, error: null }));
       
       const response = await axios.post(
-        "http://localhost:4001/auth/register",
+        `${API_BASE_URL}/auth/register`,
         data
       );
       
@@ -116,7 +117,7 @@ function AuthProvider(props) {
     try {
       setState((prevState) => ({ ...prevState, loading: true, error: null }));
       const response = await axios.put(
-        "http://localhost:4001/auth/update-profile",
+        `${API_BASE_URL}/auth/update-profile`,
         data
       );
       
@@ -162,7 +163,7 @@ function AuthProvider(props) {
       
       // ใช้ fetch แทน axios เพื่อหลีกเลี่ยง interceptor
       const response = await fetch(
-        "http://localhost:4001/auth/upload-profile-picture",
+        `${API_BASE_URL}/auth/upload-profile-picture`,
         {
           method: "POST",
           headers: {
@@ -205,7 +206,7 @@ function AuthProvider(props) {
     try {
       setState((prevState) => ({ ...prevState, loading: true, error: null }));
       const response = await axios.put(
-        "http://localhost:4001/auth/reset-password",
+        `${API_BASE_URL}/auth/reset-password`,
         { oldPassword, newPassword }
       );
       
