@@ -1,18 +1,34 @@
 import { useState, useEffect } from "react";
 import {Link} from "react-router-dom";
 import heroImage from "../../assets/images/image.jpg";
+import axios from "axios";
 
 function BlogCard({ categories }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
 
-  // ใช้ categories prop ที่ส่งมาจาก parent component
+  // ดึงข้อมูลจาก Supabase ผ่าน backend ถ้าไม่มี props ส่งมา
   useEffect(() => {
-    if (categories && categories.length > 0) {
-      setPosts(categories);
-      setLoading(false);
-    }
-  }, [categories]);
+    const fetchPosts = async () => {
+      try {
+        setLoading(true);
+        // ถ้า parent ส่ง prop มา (แม้เป็น array ว่าง) ให้ใช้ตามนั้นและไม่ดึงซ้ำ
+        if (typeof categories !== 'undefined') {
+          setPosts(categories);
+          setLoading(false);
+          return;
+        }
+        const res = await axios.get(`${API_BASE_URL}/posts`, { params: { limit: 6 } });
+        setPosts(res.data?.posts || []);
+      } catch (err) {
+        console.error("Failed to load posts", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, [API_BASE_URL, categories]);
 
   // Function to format date in readable format
   const formatDateReadable = (dateString) => {
@@ -71,8 +87,8 @@ function BlogCard({ categories }) {
           </p>
           <div className="flex items-center text-sm">
             <img
-              className="w-8 h-8 rounded-full mr-2"
-              src={heroImage}
+              className="w-8 h-8 rounded-full mr-2 object-cover"
+              src={post.author_pic || heroImage}
               alt={post.author}
             />
             <span>{post.author}</span>

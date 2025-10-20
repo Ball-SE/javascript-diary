@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
-import connectionPool from "../utils/db.mjs";
+// ไม่ต้อง import connectionPool แล้ว เนื่องจากใช้ Supabase Client โดยตรง
 import dotenv from "dotenv";
 import multer from "multer";
 
@@ -178,6 +178,7 @@ authRouter.get("/get-user", async (req, res) => {
       name: userData.name,
       role: userData.role,
       profilePic: userData.profile_pic,
+      bio: userData.bio,
     });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
@@ -237,7 +238,7 @@ authRouter.put("/reset-password", async (req, res) => {
 
 authRouter.put("/update-profile", async (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
-  const { name, username } = req.body;
+  const { name, username, bio } = req.body;
 
   
   if (!token) {
@@ -271,6 +272,7 @@ authRouter.put("/update-profile", async (req, res) => {
     const updateData = {};
     if (name) updateData.name = name;
     if (username) updateData.username = username;
+    if (typeof bio !== 'undefined') updateData.bio = bio;
 
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')
@@ -295,6 +297,7 @@ authRouter.put("/update-profile", async (req, res) => {
         name: updatedUser.name,
         role: updatedUser.role,
         profilePic: updatedUser.profile_pic,
+        bio: updatedUser.bio,
       }
     });
   } catch (error) {

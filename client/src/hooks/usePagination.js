@@ -7,6 +7,7 @@ export const usePagination = (selectedCategory) => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
 
   // ฟังก์ชันดึงข้อมูลแบบ pagination
   const fetchPosts = useCallback(async (pageNum = 1, category = "all") => {
@@ -14,34 +15,37 @@ export const usePagination = (selectedCategory) => {
     setError(null);
     try {
       const categoryParam = category === "Highlight" || category === "all" ? "" : category;
-      
-      const response = await axios.get(
-        "https://blog-post-project-api.vercel.app/posts", {
-          params: {
-            page: pageNum,
-            limit: 6,
-            category: categoryParam
-          }
+      const response = await axios.get(`${API_BASE_URL}/posts`, {
+        params: {
+          page: pageNum,
+          limit: 6,
+          category: categoryParam
         }
-      );
+      });
       
+      const received = response.data.posts || [];
       if (pageNum === 1) {
         // ถ้าเป็นหน้าแรก ให้ reset posts
-        setPosts(response.data.posts);
+        setPosts(received);
       } else {
         // ถ้าเป็นหน้าต่อไป ให้เพิ่ม posts
-        setPosts(prevPosts => [...prevPosts, ...response.data.posts]);
+        setPosts(prevPosts => [...prevPosts, ...received]);
       }
       
       // ตรวจสอบว่าได้ข้อมูลหน้าสุดท้ายแล้วหรือยัง
-      setHasMore(response.data.currentPage < response.data.totalPages);
+      const limit = 6;
+      if (received.length < limit) {
+        setHasMore(false);
+      } else {
+        setHasMore(response.data.currentPage < response.data.totalPages);
+      }
     } catch (error) {
       console.error("Error fetching posts:", error);
       setError("Failed to fetch posts");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   // Load more posts
   const handleLoadMore = useCallback(() => {

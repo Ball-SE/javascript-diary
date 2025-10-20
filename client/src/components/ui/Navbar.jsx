@@ -68,11 +68,11 @@ export function Navbar(){
             // แสดงข้อมูลผู้ใช้เมื่อล็อกอินแล้ว
             <div className="relative hidden sm:block">
               <div className="flex items-center gap-3 cursor-pointer" onClick={toggleUserMenu}>
-                <div className="w-8 h-8 bg-[#26231E] rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {state.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
+                <img
+                  className="w-8 h-8 rounded-full object-cover"
+                  src={state.user?.profilePic}
+                  alt={state.user?.name || state.user?.username || 'User'}
+                />
                 <span className="text-[#26231E] font-medium">
                   {state.user?.name || state.user?.username || 'User'}
                 </span>
@@ -164,11 +164,11 @@ export function Navbar(){
               // Mobile menu สำหรับผู้ใช้ที่ล็อกอินแล้ว
               <>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-[#26231E] rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {state.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
+                  <img
+                    className="w-8 h-8 rounded-full object-cover"
+                    src={state.user?.profilePic}
+                    alt={state.user?.name || state.user?.username || 'User'}
+                  />
                   <span className="text-[#26231E] font-medium">
                     {state.user?.name || state.user?.username || 'User'}
                   </span>

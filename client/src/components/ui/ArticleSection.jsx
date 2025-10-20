@@ -10,13 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.jsx";
-import { category } from "../../data/category";
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { usePosts } from "../../hooks/usePosts";
 import { usePagination } from "../../hooks/usePagination";
 
 function ArticleSection() {
-  const [allCategories] = useState(category);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
+  const [allCategories, setAllCategories] = useState([]);
+  const [keyword, setKeyword] = useState("");
   
   // ใช้ custom hooks
   const { 
@@ -35,13 +37,37 @@ function ArticleSection() {
     handleLoadMore 
   } = usePagination(selectedCategory);
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const [catRes, postsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/posts/categories`),
+          axios.get(`${API_BASE_URL}/posts`, { params: { limit: 1000 } })
+        ]);
+        const names = (catRes.data?.categories || []).map((c) => c.name);
+        const presentSet = new Set((postsRes.data?.posts || []).map((p) => p.category).filter(Boolean));
+        const filtered = names.filter((n) => presentSet.has(n));
+        setAllCategories(["all", ...filtered]);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    fetchCategories();
+  }, [API_BASE_URL]);
+
   // Handle select change สำหรับมือถือ
   const handleSelectChange = (value) => {
     handleCategoryChange(value);
   };
 
-  // ใช้ filteredPosts สำหรับการแสดงผล (ไม่ใช้ pagination)
-  const displayPosts = filteredPosts;
+  // ใช้ filteredPosts + keyword สำหรับการแสดงผล
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  const displayPosts = normalizedKeyword
+    ? filteredPosts.filter((p) => {
+        const haystack = `${p.title || ""} ${p.description || ""} ${p.content || ""}`.toLowerCase();
+        return haystack.includes(normalizedKeyword);
+      })
+    : filteredPosts;
 
   return (
     <div className="w-full h-[236px] sm:w-[1200px] sm:h-[2034px] gap-[48px] mx-auto sm:mt-[80px]">
@@ -67,6 +93,8 @@ function ArticleSection() {
             type="search"
             placeholder="Search"
             className="w-full sm:w-[360px] h-[48px] gap-[4px] border border-[#DAD6D1] rounded-[8px] pt-[12px] pr-[48px] pb-[12px] pl-[16px] bg-[#FFFFFF] font-medium text-base text-[#75716B]"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
           />
           <Search className="absolute right-3 top-1/2 transform -translate-y-2 text-[#75716B] w-[24px] h-[24px]" />
         </div>

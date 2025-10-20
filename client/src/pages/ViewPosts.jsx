@@ -16,23 +16,40 @@ import { CommentForm } from "../components/forms/CommentForm";
 function ViewPosts() {
   const { postId } = useParams();
   const [post, setPost] = useState("");
+  const [comments, setComments] = useState([]);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
 
   useEffect(() => {
     const fetchPost = async () => {
       if (!postId) return;
 
       try {
-        const response = await axios.get(
-          `https://blog-post-project-api.vercel.app/posts/${postId}`
-        );
-        setPost(response.data);
+        const response = await axios.get(`${API_BASE_URL}/posts/${postId}`);
+        setPost(response.data.data);
       } catch (error) {
         console.error("Error fetching post:", error);
       }
     };
 
     fetchPost();
-  }, [postId]);
+  }, [API_BASE_URL, postId]);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!postId) return;
+      try {
+        const response = await axios.get(`${API_BASE_URL}/posts/${postId}/comments`);
+        setComments(response.data.comments || []);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    };
+    fetchComments();
+  }, [API_BASE_URL, postId]);
+
+  const handleCommentAdded = (newComment) => {
+    setComments((prev) => [...prev, newComment]);
+  };
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] flex flex-col">
@@ -102,8 +119,8 @@ function ViewPosts() {
 
                 {/* Comment Section */}
                 <div className="mb-8 flex flex-col gap-4">
-                  <CommentForm />
-                  <ViewPostCard />
+                  <CommentForm postId={postId} onAdded={handleCommentAdded} />
+                  <ViewPostCard comments={comments} />
                 </div>
               </div>
             </div>
@@ -115,7 +132,7 @@ function ViewPosts() {
                   <div className="flex items-center mb-4">
                     <img
                       className="w-12 h-12 rounded-full mr-3 object-cover"
-                      src={heroImage}
+                      src={post.author_pic || heroImage}
                       alt="Author"
                     />
                     <div>
@@ -127,9 +144,7 @@ function ViewPosts() {
                   </div>
                   <div className="mt-6 border-t border-gray-300 mb-4"></div>
                   <p className="text-base font-medium text-[#75716B] leading-relaxed">
-                    I am a pet enthusiast and freelance writer who specializes in animal behavior and care. With a deep love for cats, I enjoy sharing insights on feline companionship and wellness.
-                    <br /><br />
-                    When I'm not writing, I spend time volunteering at my local animal shelter, helping cats find loving homes.
+                    {post.author_bio || 'No bio available'}
                   </p>
                 </div>
               </div>

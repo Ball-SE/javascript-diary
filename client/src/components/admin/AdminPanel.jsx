@@ -23,14 +23,28 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { 
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 function AdminPanel() {
     const navigate = useNavigate();
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState('article');
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState(null);
     
     // State สำหรับข้อมูลบทความ
     const [articles, setArticles] = useState([]);
@@ -49,7 +63,7 @@ function AdminPanel() {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get("https://blog-post-project-api.vercel.app/posts");
+            const response = await axios.get(`${API_BASE_URL}/posts`);
             console.log('Articles data:', response.data);
             
             if (response.data && response.data.posts) {
@@ -120,17 +134,16 @@ function AdminPanel() {
         return matchesSearch && matchesCategory && matchesStatus;
     });
 
-    // ฟังก์ชันลบบทความ
+    // ฟังก์ชันลบบทความ (เรียกจาก dialog)
     const handleDeleteArticle = async (articleId) => {
-        if (window.confirm('Are you sure you want to delete this article?')) {
-            try {
-                await axios.delete(`https://blog-post-project-api.vercel.app/posts/${articleId}`);
-                // รีเฟรชข้อมูลหลังจากลบ
-                fetchArticles();
-            } catch (error) {
-                console.error('Error deleting article:', error);
-                setError('Failed to delete article');
-            }
+        try {
+            await axios.delete(`${API_BASE_URL}/posts/${articleId}`);
+            toast.success('Deleted', { description: 'Article removed', position: 'bottom-right' });
+            fetchArticles();
+        } catch (error) {
+            console.error('Error deleting article:', error);
+            setError('Failed to delete article');
+            toast.error('Delete failed', { description: error?.response?.data?.message || error.message, position: 'bottom-right' });
         }
     };
 
@@ -167,15 +180,7 @@ function AdminPanel() {
                                 </div>
                             )}
 
-                            {/* Debug Info */}
-                            <div className="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
-                                <strong>Debug Info:</strong>
-                                <br />Articles count: {articles.length}
-                                <br />Filtered count: {filteredArticles.length}
-                                <br />Search: "{searchQuery}"
-                                <br />Category: "{selectedCategory}"
-                                <br />Status: "{selectedStatus}"
-                            </div>
+                            {/* Debug Info removed */}
 
                             {/* Filters */}
                             <div className="flex gap-4 mb-6 justify-between">
@@ -277,14 +282,14 @@ function AdminPanel() {
                                                         <td className="px-6 py-4">
                                                             <div className="flex justify-end gap-2">
                                                                 <button 
-                                                                    className="p-1.5 rounded hover:bg-gray-100 transition-colors"
+                                                                    className="p-1.5 rounded hover:bg-gray-100 transition-colors cursor-pointer"
                                                                     onClick={() => navigate(`/admin/edit-article/${article.id}`)}
                                                                 >
                                                                     <Edit2 className="w-6 h-6 text-[#75716B]" />
                                                                 </button>
                                                                 <button 
-                                                                    className="p-1.5 rounded hover:bg-gray-100 transition-colors"
-                                                                    onClick={() => handleDeleteArticle(article.id)}
+                                                                    className="p-1.5 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+                                                                    onClick={() => { setDeleteId(article.id); setDeleteOpen(true); }}
                                                                 >
                                                                     <Trash2 className="w-6 h-6 text-[#75716B]" />
                                                                 </button>
@@ -298,6 +303,18 @@ function AdminPanel() {
                                 </div>
                             )}
                         </div>
+                        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                            <AlertDialogContent className="flex flex-col items-center justify-center">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-2xl font-bold">Delete article</AlertDialogTitle>
+                                    <AlertDialogDescription>Do you want to delete this article?</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel className="rounded-full cursor-pointer">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction className="rounded-full cursor-pointer" onClick={() => { if (deleteId) handleDeleteArticle(deleteId); setDeleteOpen(false); }}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </>
                 );
         }

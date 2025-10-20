@@ -10,12 +10,13 @@ export const usePosts = () => {
   const [error, setError] = useState(null);
 
   // ดึงข้อมูลทั้งหมดจาก API
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
+
   const fetchAllPosts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("https://blog-post-project-api.vercel.app/posts");
-      console.log(response.data.posts);
+      const response = await axios.get(`${API_BASE_URL}/posts`);
       setAllPosts(response.data.posts);
       setFilteredPosts(response.data.posts);
     } catch (error) {
@@ -24,14 +25,15 @@ export const usePosts = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   // Filter posts ตาม category ที่เลือก
   const filterPostsByCategory = useCallback((category) => {
     if (!category || category === "all") {
       setFilteredPosts(allPosts);
     } else {
-      const filtered = allPosts.filter(post => post.category === category);
+      const target = String(category).trim().toLowerCase();
+      const filtered = allPosts.filter(post => String(post.category || '').trim().toLowerCase() === target);
       setFilteredPosts(filtered);
     }
   }, [allPosts]);

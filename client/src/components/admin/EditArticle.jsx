@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import NavAdmin from './NavAdmin';
@@ -21,8 +21,9 @@ import {
   X
 } from 'lucide-react';
 
-function CreateArticle() {
+function EditArticle() {
     const navigate = useNavigate();
+    const { postId } = useParams();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
     const { state } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -70,6 +71,27 @@ function CreateArticle() {
         fetchCategories();
         fetchStatuses();
     }, [API_BASE_URL]);
+
+    // Fetch existing post data and populate fields
+    useEffect(() => {
+        const fetchPost = async () => {
+            if (!postId) return;
+            try {
+                const res = await axios.get(`${API_BASE_URL}/posts/${postId}`);
+                const p = res.data?.data;
+                if (p) {
+                    setTitle(p.title || '');
+                    setIntroduction(p.description || '');
+                    setContent(p.content || '');
+                    setSelectedCategory(String(p.category_id || ''));
+                    setThumbnailPreview(p.image || '');
+                }
+            } catch (err) {
+                console.error('Failed to load post', err);
+            }
+        };
+        fetchPost();
+    }, [API_BASE_URL, postId]);
 
     const resolveStatusId = (statusKey) => {
         const match = statuses.find(s => s.status === statusKey);
@@ -135,6 +157,17 @@ function CreateArticle() {
         }
     };
 
+    const handleDeleteArticle = async (articleId) => {
+        try {
+            await axios.delete(`${API_BASE_URL}/posts/${articleId}`);
+            toast.success('Deleted', { description: 'Article removed', position: 'bottom-right' });
+            navigate('/admin');
+        } catch (error) {
+            console.error('Error deleting article:', error);
+            toast.error('Delete failed', { description: error?.response?.data?.message || error.message, position: 'bottom-right' });
+        }
+    };
+
     return (
         <div className="flex min-h-screen bg-gray-50">
             <NavAdmin 
@@ -158,10 +191,10 @@ function CreateArticle() {
                 <div className="w-full flex justify-between items-center mb-6 border-b-2 border-gray-200 p-8">
                     <h3 className="text-2xl font-semibold text-[#26231E]">Create Article</h3>
                     <div className="flex gap-4">
-                    <Button disabled={submitting} onClick={() => submitArticle('draft')} className="flex items-center gap-2 rounded-full bg-white text-[#26231E] border border-[#26231E] hover:bg-gray-50">
+                    <Button disabled={submitting} onClick={() => submitArticle('draft')} className="flex items-center gap-2 rounded-full bg-white text-[#26231E] border border-[#26231E] hover:bg-gray-50 cursor-pointer">
                         Save as draft
                     </Button>
-                    <Button disabled={submitting} onClick={() => submitArticle('publish')} className="flex items-center gap-2 rounded-full bg-[#26231E] text-white hover:bg-[#1a1a1a]">
+                    <Button disabled={submitting} onClick={() => submitArticle('publish')} className="flex items-center gap-2 rounded-full bg-[#26231E] text-white hover:bg-[#1a1a1a] cursor-pointer">
                         Save and publish
                     </Button>
                     </div>
@@ -187,7 +220,7 @@ function CreateArticle() {
                                     className="hidden"
                                     onChange={handleThumbnailSelected}
                                 />
-                                <Button onClick={handleOpenFilePicker} className="flex items-center gap-2 bg-white text-[#26231E] font-medium text-base border border-[#26231E] hover:bg-gray-50 rounded-full w-64">
+                                <Button onClick={handleOpenFilePicker} className="flex items-center gap-2 bg-white text-[#26231E] font-medium text-base border border-[#26231E] hover:bg-gray-50 rounded-full w-64 cursor-pointer">
                                     <Upload className="w-4 h-4" />
                                     Upload thumbnail image
                                 </Button>
@@ -257,7 +290,7 @@ function CreateArticle() {
                         </div>
 
                         <div>
-                            <button className="flex items-center gap-2 text-black font-medium text-base underline">
+                            <button className="flex items-center gap-2 text-black font-medium text-base underline cursor-pointer" onClick={() => { handleDeleteArticle(postId); }}>
                                 <Trash2 className="w-5 h-5" />
                                 Delete article
                             </button>
@@ -269,5 +302,5 @@ function CreateArticle() {
     );
 }
 
-export default CreateArticle;
+export default EditArticle;
 
