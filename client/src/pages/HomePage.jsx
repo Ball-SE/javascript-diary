@@ -5,9 +5,9 @@ import {Footer} from '../components/ui/Footer'
 
 function HomePage(){
     return (
-        <div className="min-h-screen bg-[#F9F8F6]">
+        <div className="h-screen bg-[#F9F8F6] flex flex-col">
             <Navbar />
-            <main className="flex-grow">
+            <main className="flex-grow overflow-y-auto">
                 <HeroSection />
                 <ArticleSection />
             </main>

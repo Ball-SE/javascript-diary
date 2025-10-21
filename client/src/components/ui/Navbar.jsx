@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { NotiUser } from "../alert/NotiUser";
 
 export function Navbar(){
     
@@ -66,7 +67,13 @@ export function Navbar(){
         <div className="flex gap-4 mr-23 items-center">
           {isAuthenticated ? (
             // แสดงข้อมูลผู้ใช้เมื่อล็อกอินแล้ว
-            <div className="relative hidden sm:block">
+            <>
+              {/* Notification Bell */}
+              <div className="hidden sm:block">
+                <NotiUser />
+              </div>
+              
+              <div className="relative hidden sm:block">
               <div className="flex items-center gap-3 cursor-pointer" onClick={toggleUserMenu}>
                 <img
                   className="w-8 h-8 rounded-full object-cover"
@@ -129,7 +136,8 @@ export function Navbar(){
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           ) : (
             // แสดงปุ่ม Log in และ Sign up เมื่อยังไม่ได้ล็อกอิน
             <>
@@ -163,6 +171,11 @@ export function Navbar(){
             {isAuthenticated ? (
               // Mobile menu สำหรับผู้ใช้ที่ล็อกอินแล้ว
               <>
+                {/* Mobile Notification Bell */}
+                <div className="sm:hidden mb-4">
+                  <NotiUser />
+                </div>
+                
                 <div className="flex items-center gap-3 mb-4">
                   <img
                     className="w-8 h-8 rounded-full object-cover"

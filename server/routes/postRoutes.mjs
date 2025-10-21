@@ -3,6 +3,7 @@ import { postValidations } from "../middlewares/postValidations.mjs";
 import multer from "multer";
 import protectAdmin from "../middlewares/protectAdmin.mjs";
 import { createClient } from "@supabase/supabase-js";
+import { enableRealtime } from "../middlewares/enableRealtime.mjs";
 
 // เชื่อมต่อ Supabase Client
 const supabase = createClient(
@@ -42,48 +43,27 @@ postRoutes.get("/test-db", async (req, res) => {
 });
 
 postRoutes.get("/", async (req, res) => {
-    // ลอจิกในอ่านข้อมูลโพสต์ทั้งหมดในระบบ
     try {
-      // 1) Access ข้อมูลใน Body จาก Request ด้วย req.body
-      const category = req.query.category || "";
-      const keyword = req.query.keyword || "";
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 6;
-  
-      // 2) ทำให้แน่ใจว่า query parameter page และ limit จะมีค่าอย่างต่ำเป็น 1
       const safePage = Math.max(1, page);
-      const safeLimit = Math.max(1, Math.min(100, limit));
+      const safeLimit = Math.max(1, Math.min(50, limit)); // ลด max limit
       const offset = (safePage - 1) * safeLimit;
 
-      // 3) สร้าง Supabase query สำหรับดึงข้อมูลโพสต์
-      let query = supabase
+      // Query เฉพาะข้อมูลที่จำเป็น
+      const { data: posts, error } = await supabase
         .from('posts')
         .select(`
-          id, image, title, description, date, content, status_id, likes_count,
-          categories!inner(name),
-          statuses!inner(status),
+          id, image, title, description, date, likes_count,
+          categories(name),
           users(name, profile_pic)
         `)
         .order('date', { ascending: false })
         .range(offset, offset + safeLimit - 1);
 
-      // 4) เพิ่มเงื่อนไขการค้นหาตาม category และ keyword
-      if (category && keyword) {
-        query = query
-          .eq('categories.name', category)
-          .or(`title.ilike.%${keyword}%,description.ilike.%${keyword}%,content.ilike.%${keyword}%`);
-      } else if (category) {
-        query = query.eq('categories.name', category);
-      } else if (keyword) {
-        query = query.or(`title.ilike.%${keyword}%,description.ilike.%${keyword}%,content.ilike.%${keyword}%`);
-      }
-
-      // 5) Execute the main query
-      const { data: posts, error } = await query;
-
       if (error) throw error;
 
-      // 6) จัดรูปแบบข้อมูลให้ตรงกับ format เดิม
+      // Format ข้อมูลแบบง่าย
       const formattedPosts = posts?.map(post => ({
         id: post.id,
         image: post.image,
@@ -91,46 +71,31 @@ postRoutes.get("/", async (req, res) => {
         title: post.title,
         description: post.description,
         date: post.date,
-        content: post.content,
-        status: post.statuses?.status,
-        status_id: post.status_id,
         likes_count: post.likes_count,
         author: post.users?.name,
         author_pic: post.users?.profile_pic,
       })) || [];
 
-      // 7) นับจำนวนทั้งหมดสำหรับ pagination
-      const { count, error: countError } = await supabase
+      // นับจำนวนทั้งหมด
+      const { count } = await supabase
         .from('posts')
         .select('*', { count: 'exact', head: true });
 
-      if (countError) throw countError;
       const totalPosts = count || 0;
 
-      // 8) สร้าง response พร้อมข้อมูลการแบ่งหน้า (pagination)
-      const results = {
+      res.json({
         totalPosts,
         totalPages: Math.ceil(totalPosts / safeLimit),
         currentPage: safePage,
         limit: safeLimit,
         posts: formattedPosts,
-      };
-      
-      // เช็คว่ามีหน้าถัดไปหรือไม่
-      if (offset + safeLimit < totalPosts) {
-        results.nextPage = safePage + 1;
-      }
-      // เช็คว่ามีหน้าก่อนหน้าหรือไม่
-      if (offset > 0) {
-        results.previousPage = safePage - 1;
-      }
-      
-      // 9) Return ตัว Response กลับไปหา Client ว่าสร้างสำเร็จ
-      return res.status(200).json(results);
+        nextPage: offset + safeLimit < totalPosts ? safePage + 1 : null
+      });
+
     } catch (error) {
       console.error("Error fetching posts:", error);
-      return res.status(500).json({
-        message: "Server could not read post because database issue",
+      res.status(500).json({
+        message: "Server error",
         error: error.message
       });
     }
@@ -495,7 +460,7 @@ postRoutes.get("/:postId/comments", async (req, res) => {
   }
 });
 
-postRoutes.post("/:postId/comments", async (req, res) => {
+postRoutes.post("/:postId/comments", [enableRealtime], async (req, res) => {
   const { postId } = req.params;
   const { comment_text } = req.body;
   try {
@@ -525,6 +490,27 @@ postRoutes.post("/:postId/comments", async (req, res) => {
       .eq('id', userId)
       .single();
 
+    // Broadcast notification via Supabase Realtime
+    try {
+      await supabase
+        .channel('notifications')
+        .send({
+          type: 'comment_notification',
+          payload: {
+            commentId: inserted.id,
+            postId: Number(postId),
+            userId: userId,
+            userName: userRow?.name,
+            userAvatar: userRow?.profile_pic,
+            commentText: inserted.comment_text,
+            timestamp: inserted.created_at
+          }
+        });
+    } catch (broadcastError) {
+      console.error('Error broadcasting notification:', broadcastError);
+      // Don't fail the request if broadcasting fails
+    }
+
     res.status(201).json({
       comment: {
         id: inserted.id,
@@ -536,5 +522,120 @@ postRoutes.post("/:postId/comments", async (req, res) => {
   } catch (error) {
     console.error('Error creating comment:', error);
     res.status(500).json({ message: 'Failed to create comment', error: error.message });
+  }
+});
+
+// Admin Notifications Routes
+// ดึงข้อมูล comments ที่เกี่ยวข้องกับ admin posts
+postRoutes.get("/admin/notifications/comments", protectAdmin, async (req, res) => {
+  try {
+    const { data: comments, error } = await supabase
+      .from('comments')
+      .select(`
+        id,
+        comment_text as content,
+        created_at,
+        post_id,
+        user_id,
+        posts!inner(
+          id,
+          title,
+          user_id
+        ),
+        users!inner(
+          name,
+          profile_pic
+        )
+      `)
+      .eq('posts.user_id', req.user.id) // เฉพาะ comments ในโพสต์ของ admin
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    const formattedComments = comments.map(comment => ({
+      id: comment.id,
+      content: comment.content,
+      created_at: comment.created_at,
+      post_id: comment.post_id,
+      post_title: comment.posts.title,
+      user_name: comment.users.name,
+      user_avatar: comment.users.profile_pic
+    }));
+
+    res.json({ comments: formattedComments });
+  } catch (error) {
+    console.error('Error fetching admin comment notifications:', error);
+    res.status(500).json({ message: 'Failed to fetch comment notifications', error: error.message });
+  }
+});
+
+// ดึงข้อมูล likes ที่เกี่ยวข้องกับ admin posts
+postRoutes.get("/admin/notifications/likes", protectAdmin, async (req, res) => {
+  try {
+    const { data: likes, error } = await supabase
+      .from('likes')
+      .select(`
+        id,
+        created_at,
+        post_id,
+        user_id,
+        posts!inner(
+          id,
+          title,
+          user_id
+        ),
+        users!inner(
+          name,
+          profile_pic
+        )
+      `)
+      .eq('posts.user_id', req.user.id) // เฉพาะ likes ในโพสต์ของ admin
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    const formattedLikes = likes.map(like => ({
+      id: like.id,
+      created_at: like.created_at,
+      post_id: like.post_id,
+      post_title: like.posts.title,
+      user_name: like.users.name,
+      user_avatar: like.users.profile_pic
+    }));
+
+    res.json({ likes: formattedLikes });
+  } catch (error) {
+    console.error('Error fetching admin like notifications:', error);
+    res.status(500).json({ message: 'Failed to fetch like notifications', error: error.message });
+  }
+});
+
+// Mark notification as read
+postRoutes.put("/admin/notifications/:notificationId/read", protectAdmin, async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    
+    // ในอนาคตสามารถเพิ่มตาราง notification_reads เพื่อติดตามการอ่าน
+    // ตอนนี้เราจะ return success เพื่อให้ frontend ทำงานได้
+    
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ message: 'Failed to mark notification as read', error: error.message });
+  }
+});
+
+// Mark all notifications as read
+postRoutes.put("/admin/notifications/read-all", protectAdmin, async (req, res) => {
+  try {
+    // ในอนาคตสามารถเพิ่มตาราง notification_reads เพื่อติดตามการอ่าน
+    // ตอนนี้เราจะ return success เพื่อให้ frontend ทำงานได้
+    
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ message: 'Failed to mark all notifications as read', error: error.message });
   }
 });

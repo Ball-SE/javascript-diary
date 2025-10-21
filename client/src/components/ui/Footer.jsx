@@ -6,22 +6,31 @@ import { Link } from "react-router-dom";
 export function Footer(){
 
     return (
-        <footer className="bg-[#EFEEEB] border border-[#DAD6D1] mt-auto pt-[40px] pr-[16px] pb-[40px] pl-[16px] w-full h-[144px] sm:pt-[60px] sm:pr-[120px] sm:pb-[60px] sm:pl-[120px] flex flex-col sm:flex-row sm:justify-between items-center">
-            <div className="w-full h-[24px] gap-[24px] flex flex-row justify-center sm:justify-start">
-                <p>
-                    Get in touch
-                </p>
-                <div className="w-[104px] h-[24px] gap-[16px] flex flex-row">
-                    <Linkedin />
-                    <Instagram />
-                    <Twitter />
-                </div>
-            </div>
+        <footer className="bg-[#EFEEEB] border-t border-[#DAD6D1] mt-auto w-full min-h-[144px] py-8 px-4 sm:py-12 sm:px-16 lg:px-24 xl:px-32">
+            <div className="max-w-7xl mx-auto">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 sm:gap-8">
+                    {/* Get in touch section */}
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        <p className="text-[#26231E] text-base font-medium">
+                            Get in touch
+                        </p>
+                        <div className="flex items-center gap-4">
+                            <Linkedin className="w-5 h-5 text-[#26231E] hover:text-[#1a1a1a] transition-colors duration-200 cursor-pointer" />
+                            <Instagram className="w-5 h-5 text-[#26231E] hover:text-[#1a1a1a] transition-colors duration-200 cursor-pointer" />
+                            <Twitter className="w-5 h-5 text-[#26231E] hover:text-[#1a1a1a] transition-colors duration-200 cursor-pointer" />
+                        </div>
+                    </div>
 
-            <div className="flex justify-center w-full sm:w-auto mt-4 sm:mt-0">
-                <Link to="/" className="w-[95px] h-[24px] gap-[6px] text-[#26231E] text-base underline font-medium hover:text-[#1a1a1a] transition-colors duration-200">
-                    Home Page
-                </Link>
+                    {/* Home Page link */}
+                    <div className="flex justify-center sm:justify-end">
+                        <Link 
+                            to="/" 
+                            className="text-[#26231E] text-base underline font-medium hover:text-[#1a1a1a] transition-colors duration-200"
+                        >
+                            Home Page
+                        </Link>
+                    </div>
+                </div>
             </div>
         </footer>
     )

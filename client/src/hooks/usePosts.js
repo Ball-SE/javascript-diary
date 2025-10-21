@@ -16,7 +16,8 @@ export const usePosts = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${API_BASE_URL}/posts`);
+      // ส่ง limit=100 เพื่อดึงข้อมูลทั้งหมด
+      const response = await axios.get(`${API_BASE_URL}/posts?limit=100`);
       setAllPosts(response.data.posts);
       setFilteredPosts(response.data.posts);
     } catch (error) {

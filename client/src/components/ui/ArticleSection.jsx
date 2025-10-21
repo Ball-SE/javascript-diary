@@ -13,7 +13,6 @@ import {
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { usePosts } from "../../hooks/usePosts";
-import { usePagination } from "../../hooks/usePagination";
 
 function ArticleSection() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
@@ -28,21 +27,13 @@ function ArticleSection() {
     error: postsError, 
     handleCategoryChange 
   } = usePosts();
-  
-  const { 
-    // posts: paginatedPosts, 
-    hasMore, 
-    loading: paginationLoading, 
-    // error: paginationError, 
-    handleLoadMore 
-  } = usePagination(selectedCategory);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const [catRes, postsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/posts/categories`),
-          axios.get(`${API_BASE_URL}/posts`, { params: { limit: 1000 } })
+          axios.get(`${API_BASE_URL}/posts?limit=100`)
         ]);
         const names = (catRes.data?.categories || []).map((c) => c.name);
         const presentSet = new Set((postsRes.data?.posts || []).map((p) => p.category).filter(Boolean));
@@ -58,16 +49,43 @@ function ArticleSection() {
   // Handle select change สำหรับมือถือ
   const handleSelectChange = (value) => {
     handleCategoryChange(value);
+    setShowAll(false); // รีเซ็ต showAll เมื่อเปลี่ยน category
+  };
+
+  // Handle category change สำหรับ desktop
+  const handleCategoryClick = (category) => {
+    handleCategoryChange(category);
+    setShowAll(false); // รีเซ็ต showAll เมื่อเปลี่ยน category
+  };
+
+  // Handle view more button
+  const handleViewMore = () => {
+    setShowAll(true);
   };
 
   // ใช้ filteredPosts + keyword สำหรับการแสดงผล
   const normalizedKeyword = keyword.trim().toLowerCase();
-  const displayPosts = normalizedKeyword
+  const searchFilteredPosts = normalizedKeyword
     ? filteredPosts.filter((p) => {
         const haystack = `${p.title || ""} ${p.description || ""} ${p.content || ""}`.toLowerCase();
         return haystack.includes(normalizedKeyword);
       })
     : filteredPosts;
+
+  // State สำหรับแสดงผล 6 รายการแรก
+  const [showAll, setShowAll] = useState(false);
+  const displayPosts = showAll ? searchFilteredPosts : searchFilteredPosts.slice(0, 6);
+
+  // Debug information
+  console.log('ArticleSection Debug:', {
+    selectedCategory,
+    filteredPostsCount: filteredPosts.length,
+    searchFilteredPostsCount: searchFilteredPosts.length,
+    displayPostsCount: displayPosts.length,
+    showAll,
+    keyword: normalizedKeyword,
+    allCategories
+  });
 
   return (
     <div className="w-full h-[236px] sm:w-[1200px] sm:h-[2034px] gap-[48px] mx-auto sm:mt-[80px]">
@@ -81,7 +99,7 @@ function ArticleSection() {
           {allCategories.map((category, index) => (
             <button 
             key={index} 
-            onClick={() => handleCategoryChange(category)} 
+            onClick={() => handleCategoryClick(category)} 
             className={`w-[113px] h-[48px] rounded-[8px] pt-[12px] pr-[20px] pb-[12px] pl-[20px] gap-[10px] text-[#43403B] font-medium text-base ${selectedCategory === category ? "bg-[#DAD6D1]" : ""}`}>
                 {category}
             </button>
@@ -96,7 +114,7 @@ function ArticleSection() {
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-2 text-[#75716B] w-[24px] h-[24px]" />
+          <Search className="absolute right-3 top-1/2 transform -translate-y-3 text-[#75716B] w-[24px] h-[24px]" />
         </div>
 
         <Select className="sm:hidden w-[343px] h-[76px] gap-[4px] " onValueChange={handleSelectChange} value={selectedCategory}>
@@ -125,16 +143,16 @@ function ArticleSection() {
       {!postsLoading && !postsError && (
         <>
           <BlogCard categories={displayPosts} />
-          {hasMore && (
-          <div className="flex justify-center mt-8">
-            <button 
-              className="hover:text-muted-foreground h-[48px] px-8 flex justify-center items-center text-[#26231E] font-medium underline text-base"
-              onClick={handleLoadMore}
-              disabled={paginationLoading}
-            >
-              {paginationLoading ? "Loading..." : "View More"}
-            </button>
-          </div>
+          {/* แสดง View More button เมื่อมีข้อมูลมากกว่า 6 รายการ และยังไม่ได้แสดงทั้งหมด */}
+          {searchFilteredPosts.length > 6 && !showAll && (
+            <div className="flex justify-center mt-8">
+              <button 
+                className="hover:text-muted-foreground h-[48px] px-8 flex justify-center items-center text-[#26231E] font-medium underline text-base"
+                onClick={handleViewMore}
+              >
+                View More
+              </button>
+            </div>
           )}
         </>
       )}

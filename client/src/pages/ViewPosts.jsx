@@ -15,7 +15,17 @@ import { CommentForm } from "../components/forms/CommentForm";
 
 function ViewPosts() {
   const { postId } = useParams();
-  const [post, setPost] = useState("");
+  const [post, setPost] = useState({
+    title: "",
+    description: "",
+    content: "",
+    image: "",
+    category: "",
+    date: "",
+    author: "",
+    author_pic: "",
+    author_bio: ""
+  });
   const [comments, setComments] = useState([]);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
 
@@ -28,6 +38,18 @@ function ViewPosts() {
         setPost(response.data.data);
       } catch (error) {
         console.error("Error fetching post:", error);
+        // Set default values to prevent undefined errors
+        setPost({
+          title: "Post not found",
+          description: "This post could not be loaded",
+          content: "Please try again later",
+          image: "",
+          category: "",
+          date: new Date().toISOString(),
+          author: "Unknown",
+          author_pic: "",
+          author_bio: ""
+        });
       }
     };
 
@@ -51,19 +73,22 @@ function ViewPosts() {
     setComments((prev) => [...prev, newComment]);
   };
 
+
   return (
-    <div className="min-h-screen bg-[#F9F8F6] flex flex-col">
+    <div className="min-h-screen bg-[#F9F8F6]">
       <Navbar />
+      <main className="w-full bg-[#F9F8F6]">
         {/* รูปภาพ */}
-        <img
-            className=" w-full max-w-7xl mx-auto aspect-[1200/587] h-full object-cover rounded-lg m-8"
-            src={post.image}
-            alt={post.title}
-        />
-      <main className="flex-grow">
+        <div className="w-full max-w-7xl mx-auto p-8">
+          <img
+              className="w-full aspect-[1200/587] object-cover rounded-lg"
+              src={post.image || heroImage}
+              alt={post.title || "Post image"}
+          />
+        </div>
         
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex gap-8">
+        <div className="max-w-7xl mx-auto px-4 py-8 pb-16">
+          <div className="flex flex-col lg:flex-row gap-8">
             {/* Main Content - ด้านซ้าย */}
             <div className="flex-1">
               <div className="p-1">
@@ -74,10 +99,14 @@ function ViewPosts() {
                   {/* Category และ Date */}
                   <div className="flex items-center mb-4 gap-4">
                     <span className="bg-green-200 rounded-full px-3 py-1 text-sm font-semibold text-green-600">
-                      {post.category}
+                      {post.category || 'General'}
                     </span>
                     <p className="text-sm text-[#75716B]">
-                      {new Date(post.date).toLocaleDateString("en-US", {
+                      {post.date ? new Date(post.date).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      }) : new Date().toLocaleDateString("en-US", {
                         day: "numeric",
                         month: "long",
                         year: "numeric",
@@ -87,16 +116,18 @@ function ViewPosts() {
 
                   {/* หัวข้อบทความ */}
                   <h2 className="text-4xl font-semibold text-[#26231E] mb-4">
-                    {post.title}
+                    {post.title || 'No Title'}
                   </h2>
 
                   {/* คำอธิบาย */}
-                  <p className="text-[#75716B] text-base font-semibold mb-8">{post.description}</p>
+                  <p className="text-[#75716B] text-base font-semibold mb-8">
+                    {post.description || 'No description available'}
+                  </p>
                 </div>
 
                 {/* เนื้อหาบทความ */}
                 <div className=" mb-8 markdown">
-                  <ReactMarkdown>{post.content}</ReactMarkdown>
+                  <ReactMarkdown>{post.content || 'No content available'}</ReactMarkdown>
                 </div>
 
                 {/* Social Sharing Section */}
@@ -126,8 +157,8 @@ function ViewPosts() {
             </div>
 
             {/* Author Section - ด้านขวา (Sticky) */}
-            <div className="w-80 flex-shrink-0">
-              <div className="sticky top-8">
+            <div className="w-full lg:w-80 flex-shrink-0">
+              <div className="lg:sticky lg:top-8">
                 <div className="bg-[#EFEEEB] rounded-2xl p-6 shadow-sm">
                   <div className="flex items-center mb-4">
                     <img
@@ -139,7 +170,7 @@ function ViewPosts() {
                       <h3 className="text-xs font-medium text-[#75716B] ">
                         Author
                       </h3>
-                      <p className="font-semibold text-xl text-[#43403B]">{post.author}</p>
+                      <p className="font-semibold text-xl text-[#43403B]">{post.author || 'Unknown Author'}</p>
                     </div>
                   </div>
                   <div className="mt-6 border-t border-gray-300 mb-4"></div>

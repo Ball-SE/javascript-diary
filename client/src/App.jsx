@@ -25,7 +25,8 @@ function App() {
     <AuthProvider>
       <Toaster />
       <ScrollToTop />
-      <Routes>
+      <div className="h-screen flex flex-col">
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<LogInPage />} />
@@ -66,6 +67,7 @@ function App() {
         />
         <Route path="*" element={<PageNotFound />} />
         </Routes>
+      </div>
     </AuthProvider>
 
   )

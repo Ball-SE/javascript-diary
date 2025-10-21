@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,8 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import Pagination from '@mui/material/Pagination';
+import Stack from '@mui/material/Stack';
 
 function AdminPanel() {
     const navigate = useNavigate();
@@ -53,26 +55,27 @@ function AdminPanel() {
     const [categories, setCategories] = useState([]);
     const [statuses, setStatuses] = useState([]);
     
+    // State สำหรับ Pagination
+    const [page, setPage] = useState(1);
+    const [itemsPerPage] = useState(8); // จำนวนรายการต่อหน้า
+    
     // Force re-render when activeTab changes
     const handleTabChange = (newTab) => {
         setActiveTab(newTab);
     };
 
     // ดึงข้อมูลบทความจาก API
-    const fetchArticles = async () => {
+    const fetchArticles = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get(`${API_BASE_URL}/posts`);
-            console.log('Articles data:', response.data);
+            // ส่ง limit=100 เพื่อดึงข้อมูลทั้งหมด (หรือมากที่สุดเท่าที่เป็นไปได้)
+            const response = await axios.get(`${API_BASE_URL}/posts?limit=100`);
             
             if (response.data && response.data.posts) {
                 // สร้าง categories และ statuses จากข้อมูลที่ได้
                 const uniqueCategories = [...new Set(response.data.posts.map(post => post.category))];
                 const uniqueStatuses = [...new Set(response.data.posts.map(post => post.status))];
-                
-                console.log('Unique categories:', uniqueCategories);
-                console.log('Unique statuses:', uniqueStatuses);
                 
                 // สร้าง categories array
                 const categoriesArray = uniqueCategories.map((category, index) => ({
@@ -90,8 +93,6 @@ function AdminPanel() {
                 setStatuses(statusesArray);
                 
                 const formattedArticles = response.data.posts.map(post => {
-                    console.log('Processing post:', post);
-                    
                     // ใช้ข้อมูลจริงจาก API
                     let statusText = 'Draft'; // default
                     if (post.status === 'publish') {
@@ -116,14 +117,14 @@ function AdminPanel() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [API_BASE_URL]);
 
     // โหลดข้อมูลเมื่อ component mount
     useEffect(() => {
         if (activeTab === 'article') {
             fetchArticles();
         }
-    }, [activeTab]);
+    }, [activeTab, fetchArticles]);
 
     // กรองข้อมูลตาม search, category, และ status
     const filteredArticles = articles.filter(article => {
@@ -133,6 +134,27 @@ function AdminPanel() {
         
         return matchesSearch && matchesCategory && matchesStatus;
     });
+
+    // คำนวณจำนวนหน้าทั้งหมด
+    const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
+    
+    // คำนวณ index ของรายการที่จะแสดงในหน้าปัจจุบัน
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // ข้อมูลที่จะแสดงในหน้าปัจจุบัน
+    const currentArticles = filteredArticles.slice(startIndex, endIndex);
+
+    // Reset page เมื่อมีการกรองข้อมูล
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, selectedCategory, selectedStatus]);
+
+    // Handle page change
+    const handlePageChange = (event, value) => {
+        setPage(value);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     // ฟังก์ชันลบบทความ (เรียกจาก dialog)
     const handleDeleteArticle = async (articleId) => {
@@ -180,7 +202,6 @@ function AdminPanel() {
                                 </div>
                             )}
 
-                            {/* Debug Info removed */}
 
                             {/* Filters */}
                             <div className="flex gap-4 mb-6 justify-between">
@@ -254,7 +275,7 @@ function AdminPanel() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 border-[#DAD6D1]">
-                                            {filteredArticles.length === 0 ? (
+                                            {currentArticles.length === 0 ? (
                                                 <tr>
                                                     <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
                                                         {searchQuery || selectedCategory !== 'all' || selectedStatus !== 'all' 
@@ -264,7 +285,7 @@ function AdminPanel() {
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                filteredArticles.map((article, index) => (
+                                                currentArticles.map((article, index) => (
                                                     <tr key={article.id} className={`transition-colors ${
                                                         index % 2 === 0 ? 'bg-[#F9F8F6]' : 'bg-[#EFEEEB]'
                                                     }`}>
@@ -300,6 +321,23 @@ function AdminPanel() {
                                             )}
                                         </tbody>
                                     </table>
+                                </div>
+                            )}
+
+                            {/* Pagination */}
+                            {!loading && filteredArticles.length > 0 && (
+                                <div className="flex justify-center items-center mt-6 mb-4">
+                                    <Stack spacing={2}>
+                                        <Pagination 
+                                            count={totalPages} 
+                                            page={page} 
+                                            onChange={handlePageChange}
+                                            showFirstButton 
+                                            showLastButton
+                                            color="primary"
+                                            size="large"
+                                        />
+                                    </Stack>
                                 </div>
                             )}
                         </div>

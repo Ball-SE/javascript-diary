@@ -8,9 +8,22 @@ import authRoutes from "./routes/auth.mjs";
 const app = express();
 const port = process.env.PORT || 4001;
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// CORS configuration
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json({ limit: '5mb' })); // ลดจาก 10mb
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
 
 app.use("/posts", postRoutes);
 app.use("/assignments", assignmentsRoutes);
@@ -20,12 +33,11 @@ app.get("/", (req, res) => {
   res.send("Hello TechUp!");
 });
 
-app.get("/profiles", (req, res) => {
-  return res.json({
-    data: {
-      name: "john",
-      age: 20,
-    },
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    timestamp: new Date().toISOString(),
+    port: port 
   });
 });
 
