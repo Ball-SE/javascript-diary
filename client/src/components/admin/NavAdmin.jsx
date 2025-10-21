@@ -8,8 +8,10 @@ import {
   ExternalLink, 
   LogOut
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 function NavAdmin({ activeTab, setActiveTab, sidebarOpen, onNavigateHome }) {
+    const { logout } = useAuth();
     const menuItems = [
         { icon: FileText, label: 'Article management', value: 'article' },
         { icon: FolderOpen, label: 'Category management', value: 'category' },
@@ -52,7 +54,10 @@ function NavAdmin({ activeTab, setActiveTab, sidebarOpen, onNavigateHome }) {
                     <ExternalLink className="w-5 h-5" />
                     <span className='text-base font-medium text-[#75716B]'>hh. website</span>
                 </button>
-                <button className="w-full flex items-center gap-3 p-5 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
+                <button 
+                    className="w-full flex items-center gap-3 p-5 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={logout}
+                >
                     <LogOut className="w-5 h-5" />
                     <span className='text-base font-medium text-[#75716B]'>Log out</span>
                 </button>

@@ -4,6 +4,17 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Plus, Trash2, Search, Edit2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function CategoryManagement() {
   const navigate = useNavigate();
@@ -11,6 +22,8 @@ function CategoryManagement() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:4001";
@@ -32,31 +45,42 @@ function CategoryManagement() {
     };
 
     fetchCategories();
-  }, []);
+  }, [API_BASE_URL]);
 
   // Filter categories based on search query
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Handle delete category (you'll need to implement this endpoint)
+  // Handle delete category
   const handleDeleteCategory = async (categoryId) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      try {
-        // You'll need to create this endpoint in your backend
-        await axios.delete(`${API_BASE_URL}/posts/categories/${categoryId}`);
-        setCategories(categories.filter((cat) => cat.id !== categoryId));
-      } catch (err) {
-        console.error("Error deleting category:", err);
-        alert("Failed to delete category");
-      }
+    setDeleteLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/posts/categories/${categoryId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setCategories(categories.filter((cat) => cat.id !== categoryId));
+      setCategoryToDelete(null);
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      alert("Failed to delete category");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  // Handle edit category (you'll need to implement this endpoint)
-  const handleEditCategory = async (categoryId) => {
-    // You can implement edit functionality here
-    console.log("Edit category:", categoryId);
+  // Handle delete button click
+  const handleDeleteClick = (categoryId) => {
+    setCategoryToDelete(categoryId);
+  };
+
+  // Handle edit category
+  const handleEditCategory = (categoryId) => {
+    // Navigate to edit page with categoryId in URL
+    navigate(`/admin/edit-category/${categoryId}`);
   };
 
   if (loading) {
@@ -151,7 +175,7 @@ function CategoryManagement() {
                         </button>
                         <button
                           className="p-1.5 rounded hover:bg-gray-100 transition-colors"
-                          onClick={() => handleDeleteCategory(category.id)}
+                          onClick={() => handleDeleteClick(category.id)}
                         >
                           <Trash2 className="w-6 h-6 text-[#75716B]" />
                         </button>
@@ -164,6 +188,28 @@ function CategoryManagement() {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Do you want to delete this category?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => handleDeleteCategory(categoryToDelete)}
+              disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteLoading ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

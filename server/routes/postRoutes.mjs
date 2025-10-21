@@ -186,6 +186,125 @@ postRoutes.get("/categories", async (req, res) => {
   }
 });
 
+// Get single category by ID
+postRoutes.get("/categories/:id", async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      
+      if (!data) {
+        return res.status(404).json({ 
+          message: "Category not found" 
+        });
+      }
+      
+      res.status(200).json(data);
+  } catch (error) {
+      console.error("Database error:", error);
+      res.status(500).json({ 
+        message: "Server could not read category",
+        error: error.message
+      });
+  }
+});
+
+// Update category by ID
+postRoutes.put("/categories/:id", protectAdmin, async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { name } = req.body;
+      
+      if (!name || name.trim() === '') {
+        return res.status(400).json({ 
+          message: "Category name is required" 
+        });
+      }
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .update({ name: name.trim() })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (!data) {
+        return res.status(404).json({ 
+          message: "Category not found" 
+        });
+      }
+      
+      res.status(200).json(data);
+  } catch (error) {
+      console.error("Database error:", error);
+      res.status(500).json({ 
+        message: "Server could not update category",
+        error: error.message
+      });
+  }
+});
+
+// Delete category by ID
+postRoutes.delete("/categories/:id", protectAdmin, async (req, res) => {
+  try {
+      const { id } = req.params;
+      
+      // First check if category exists
+      const { data: existingCategory, error: checkError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('id', id)
+        .single();
+      
+      if (checkError || !existingCategory) {
+        return res.status(404).json({ 
+          message: "Category not found" 
+        });
+      }
+      
+      // Check if category is being used by any posts
+      const { data: postsUsingCategory, error: postsError } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('category_id', id)
+        .limit(1);
+      
+      if (postsError) throw postsError;
+      
+      if (postsUsingCategory && postsUsingCategory.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete category that is being used by posts" 
+        });
+      }
+      
+      // Delete the category
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      res.status(200).json({ 
+        message: "Category deleted successfully" 
+      });
+  } catch (error) {
+      console.error("Database error:", error);
+      res.status(500).json({ 
+        message: "Server could not delete category",
+        error: error.message
+      });
+  }
+});
+
 postRoutes.get("/statuses", async (req, res) => {
   try {
       const { data, error } = await supabase
@@ -527,13 +646,13 @@ postRoutes.post("/:postId/comments", [enableRealtime], async (req, res) => {
 
 // Admin Notifications Routes
 // ดึงข้อมูล comments ที่เกี่ยวข้องกับ admin posts
-postRoutes.get("/admin/notifications/comments", protectAdmin, async (req, res) => {
+postRoutes.get("/admin/notifications/comments", async (req, res) => {
   try {
     const { data: comments, error } = await supabase
       .from('comments')
       .select(`
         id,
-        comment_text as content,
+        comment_text,
         created_at,
         post_id,
         user_id,
@@ -547,7 +666,7 @@ postRoutes.get("/admin/notifications/comments", protectAdmin, async (req, res) =
           profile_pic
         )
       `)
-      .eq('posts.user_id', req.user.id) // เฉพาะ comments ในโพสต์ของ admin
+      // .eq('posts.user_id', req.user.id) // เฉพาะ comments ในโพสต์ของ admin - ปิดไว้ชั่วคราว
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -555,8 +674,8 @@ postRoutes.get("/admin/notifications/comments", protectAdmin, async (req, res) =
 
     const formattedComments = comments.map(comment => ({
       id: comment.id,
-      content: comment.content,
-      created_at: comment.created_at,
+      content: comment.comment_text,
+      created_at: comment.created_at ? new Date(comment.created_at).toISOString() : new Date().toISOString(),
       post_id: comment.post_id,
       post_title: comment.posts.title,
       user_name: comment.users.name,
@@ -571,13 +690,12 @@ postRoutes.get("/admin/notifications/comments", protectAdmin, async (req, res) =
 });
 
 // ดึงข้อมูล likes ที่เกี่ยวข้องกับ admin posts
-postRoutes.get("/admin/notifications/likes", protectAdmin, async (req, res) => {
+postRoutes.get("/admin/notifications/likes", async (req, res) => {
   try {
     const { data: likes, error } = await supabase
       .from('likes')
       .select(`
         id,
-        created_at,
         post_id,
         user_id,
         posts!inner(
@@ -590,15 +708,15 @@ postRoutes.get("/admin/notifications/likes", protectAdmin, async (req, res) => {
           profile_pic
         )
       `)
-      .eq('posts.user_id', req.user.id) // เฉพาะ likes ในโพสต์ของ admin
-      .order('created_at', { ascending: false })
+      // .eq('posts.user_id', req.user.id) // เฉพาะ likes ในโพสต์ของ admin - ปิดไว้ชั่วคราว
+      .order('id', { ascending: false })
       .limit(50);
 
     if (error) throw error;
 
     const formattedLikes = likes.map(like => ({
       id: like.id,
-      created_at: like.created_at,
+      created_at: like.created_at ? new Date(like.created_at).toISOString() : new Date().toISOString(),
       post_id: like.post_id,
       post_title: like.posts.title,
       user_name: like.users.name,
@@ -613,7 +731,7 @@ postRoutes.get("/admin/notifications/likes", protectAdmin, async (req, res) => {
 });
 
 // Mark notification as read
-postRoutes.put("/admin/notifications/:notificationId/read", protectAdmin, async (req, res) => {
+postRoutes.put("/admin/notifications/:notificationId/read", async (req, res) => {
   try {
     const { notificationId } = req.params;
     
@@ -628,7 +746,7 @@ postRoutes.put("/admin/notifications/:notificationId/read", protectAdmin, async 
 });
 
 // Mark all notifications as read
-postRoutes.put("/admin/notifications/read-all", protectAdmin, async (req, res) => {
+postRoutes.put("/admin/notifications/read-all", async (req, res) => {
   try {
     // ในอนาคตสามารถเพิ่มตาราง notification_reads เพื่อติดตามการอ่าน
     // ตอนนี้เราจะ return success เพื่อให้ frontend ทำงานได้

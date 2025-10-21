@@ -57,7 +57,7 @@ function AdminPanel() {
     
     // State สำหรับ Pagination
     const [page, setPage] = useState(1);
-    const [itemsPerPage] = useState(8); // จำนวนรายการต่อหน้า
+    const [itemsPerPage] = useState(7); // จำนวนรายการต่อหน้า
     
     // Force re-render when activeTab changes
     const handleTabChange = (newTab) => {

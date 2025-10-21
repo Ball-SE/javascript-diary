@@ -16,6 +16,7 @@ import AdminRoute from './pages/AdminRoutes.jsx'
 import CreateArticle from './components/admin/CreateArticle.jsx'
 import CreatCategory from './components/admin/CreatCategory.jsx'
 import EditArticle from './components/admin/EditArticle.jsx'
+import EditCategory from './components/admin/EditCategory.jsx'
 
 jwtInterceptor();
 
@@ -62,6 +63,14 @@ function App() {
           element={
             <AdminRoute>
               <CreatCategory />
+            </AdminRoute>
+          } 
+        />
+        <Route 
+          path="/admin/edit-category/:categoryId" 
+          element={
+            <AdminRoute>
+              <EditCategory />
             </AdminRoute>
           } 
         />

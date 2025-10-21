@@ -5,6 +5,9 @@ export function useAdminNotifications() {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalNotifications, setTotalNotifications] = useState(0);
     const { state } = useAuth();
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
@@ -16,25 +19,41 @@ export function useAdminNotifications() {
         const now = new Date();
         const date = new Date(timestamp);
         
-        if (isNaN(date.getTime())) return 'Unknown time';
+        if (isNaN(date.getTime())) {
+            return 'Unknown time';
+        }
         
-        const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+        const diffInMs = now - date;
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
         
-        if (diffInHours < 1) return 'Just now';
-        if (diffInHours < 24) return `${diffInHours} hours ago`;
+        
+        // Less than 1 minute
+        if (diffInMinutes < 1) return 'Just now';
+        
+        // Less than 1 hour
+        if (diffInMinutes < 60) {
+            return diffInMinutes === 1 ? '1 minute ago' : `${diffInMinutes} minutes ago`;
+        }
+        
+        // Less than 24 hours
+        if (diffInHours < 24) {
+            return diffInHours === 1 ? '1 hour ago' : `${diffInHours} hours ago`;
+        }
+        
+        // Less than 48 hours
         if (diffInHours < 48) return 'Yesterday';
         
-        return date.toLocaleDateString('en-GB', {
+        // More than 2 days - show actual date
+        return date.toLocaleDateString('th-TH', {
             day: '2-digit',
             month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric'
         });
     };
 
-    // Fetch admin notifications
-    const fetchAdminNotifications = async () => {
+    // Fetch admin notifications with pagination
+    const fetchAdminNotifications = async (page = 1) => {
         if (!state.user) return;
         
         setLoading(true);
@@ -43,16 +62,14 @@ export function useAdminNotifications() {
         try {
             // ดึงข้อมูล comments และ likes ที่เกี่ยวข้องกับ admin posts
             const [commentsResponse, likesResponse] = await Promise.all([
-                fetch(`${API_BASE_URL}/admin/notifications/comments`, {
+                fetch(`${API_BASE_URL}/posts/admin/notifications/comments?page=${page}&limit=10`, {
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Content-Type': 'application/json'
                     }
                 }),
-                fetch(`${API_BASE_URL}/admin/notifications/likes`, {
+                fetch(`${API_BASE_URL}/posts/admin/notifications/likes?page=${page}&limit=10`, {
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Content-Type': 'application/json'
                     }
                 })
             ]);
@@ -95,6 +112,9 @@ export function useAdminNotifications() {
             allNotifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
             setNotifications(allNotifications);
+            setCurrentPage(page);
+            setTotalPages(Math.max(commentsData.totalPages || 1, likesData.totalPages || 1));
+            setTotalNotifications((commentsData.total || 0) + (likesData.total || 0));
         } catch (err) {
             console.error('Error fetching admin notifications:', err);
             setError(err.message);
@@ -134,7 +154,7 @@ export function useAdminNotifications() {
     // Mark notification as read
     const markAsRead = async (notificationId) => {
         try {
-            await fetch(`${API_BASE_URL}/admin/notifications/${notificationId}/read`, {
+            await fetch(`${API_BASE_URL}/posts/admin/notifications/${notificationId}/read`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -149,7 +169,7 @@ export function useAdminNotifications() {
     // Mark all notifications as read
     const markAllAsRead = async () => {
         try {
-            await fetch(`${API_BASE_URL}/admin/notifications/read-all`, {
+            await fetch(`${API_BASE_URL}/posts/admin/notifications/read-all`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -161,9 +181,14 @@ export function useAdminNotifications() {
         }
     };
 
+    // Handle page change
+    const handlePageChange = (page) => {
+        fetchAdminNotifications(page);
+    };
+
     useEffect(() => {
         if (state.user) {
-            fetchAdminNotifications();
+            fetchAdminNotifications(1);
         }
     }, [state.user]);
 
@@ -171,7 +196,11 @@ export function useAdminNotifications() {
         notifications,
         loading,
         error,
+        currentPage,
+        totalPages,
+        totalNotifications,
         fetchAdminNotifications,
+        handlePageChange,
         markAsRead,
         markAllAsRead
     };
