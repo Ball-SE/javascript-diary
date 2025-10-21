@@ -1,4 +1,4 @@
-import heroImage from "../../assets/images/image.jpg";
+import heroImage from "../../assets/images/people.png";
 
 export function HeroSection(){
     return (
@@ -25,13 +25,13 @@ export function HeroSection(){
               - Author
             </p>
             <h3 className="text-[#43403B] text-[24px] font-semibold text-left">
-              Thompson P.
+              Pharnuwat P.
             </h3>
           </div>
           <p className="text-[#75716B] text-[16px] font-medium text-left">
-          I am a pet enthusiast and freelance writer who specializes in animal behavior and care. With a deep love for cats, I enjoy sharing insights on feline companionship and wellness. <br/>
+          I am a passionate JavaScript developer and technical writer who specializes in modern web development technologies. With extensive experience in React, Node.js, and full-stack development, I enjoy sharing practical coding insights and best practices. <br/>
           <br/>
-          When i’m not writing, I spends time volunteering at my local animal shelter, helping cats find loving homes.
+          When I'm not coding, I spend time contributing to open-source projects and helping fellow developers master JavaScript fundamentals and advanced concepts.
           </p>
         </div>
       </section>

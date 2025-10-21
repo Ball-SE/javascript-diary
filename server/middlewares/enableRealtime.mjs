@@ -10,15 +10,26 @@ const supabase = createClient(
 export const enableRealtime = async (req, res, next) => {
   try {
     // เปิดใช้งาน Realtime สำหรับ tables ที่ต้องการ
-    const { error } = await supabase
+    const { error: commentsError } = await supabase
       .from('comments')
       .select('*')
       .limit(1);
     
-    if (error) {
-      console.error('Realtime setup error:', error);
+    const { error: postsError } = await supabase
+      .from('posts')
+      .select('*')
+      .limit(1);
+    
+    if (commentsError) {
+      console.error('Realtime setup error for comments:', commentsError);
     } else {
       console.log('Realtime enabled for comments table');
+    }
+    
+    if (postsError) {
+      console.error('Realtime setup error for posts:', postsError);
+    } else {
+      console.log('Realtime enabled for posts table');
     }
     
     next();

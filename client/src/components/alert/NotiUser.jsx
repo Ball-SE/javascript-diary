@@ -1,24 +1,13 @@
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
 import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications';
 
 export function NotiUser() {
     const [isOpen, setIsOpen] = useState(false);
     const [readNotifications, setReadNotifications] = useState(new Set());
-    const { state } = useAuth();
-    const { notifications, loading, fetchNotifications } = useRealtimeNotifications();
+    const { notifications, loading } = useRealtimeNotifications();
     
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
-
-    // Manual refresh function for debugging
-    const handleRefresh = () => {
-        console.log('Current user:', state.user);
-        console.log('Current notifications:', notifications);
-        console.log('Read notifications:', readNotifications);
-        console.log('Unread count:', unreadCount);
-        fetchNotifications();
-    };
     
     // Calculate unread notifications count
     const unreadCount = notifications.filter(notif => !readNotifications.has(notif.id)).length;
@@ -121,25 +110,10 @@ export function NotiUser() {
                     
                     {/* Footer */}
                     <div className="px-4 py-2 border-t border-gray-100">
-                        {notifications.length > 0 ? (
+                        {notifications.length > 0 && (
                             <button className="w-full text-center text-blue-600 hover:text-blue-800 text-sm font-medium">
                                 View all notifications
                             </button>
-                        ) : (
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={fetchNotifications}
-                                    className="flex-1 text-center text-green-600 hover:text-green-800 text-sm font-medium"
-                                >
-                                    Refresh
-                                </button>
-                                <button 
-                                    onClick={handleRefresh}
-                                    className="flex-1 text-center text-gray-600 hover:text-gray-800 text-sm font-medium"
-                                >
-                                    Debug
-                                </button>
-                            </div>
                         )}
                     </div>
                 </div>

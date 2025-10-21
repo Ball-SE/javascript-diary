@@ -111,7 +111,7 @@ function SignUpForm(){
                     <div className="flex justify-center">
                         <button 
                             type="submit"
-                            className="bg-[#26231E] w-[30%] text-white py-3 px-4 rounded-full font-medium"
+                            className="bg-[#26231E] w-[30%] text-white py-3 px-4 rounded-full font-medium cursor-pointer"
                         >
                             Sign up
                         </button>
@@ -123,7 +123,7 @@ function SignUpForm(){
                         Already have an account?{' '}
                         <button 
                             onClick={handleLoginClick}
-                            className="text-[#26231E] underline hover:text-[#1a1a1a] transition-colors duration-200"
+                            className="text-[#26231E] underline hover:text-[#1a1a1a] transition-colors duration-200 cursor-pointer"
                         >
                             Log in
                         </button>

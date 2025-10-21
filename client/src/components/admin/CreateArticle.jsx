@@ -145,7 +145,7 @@ function CreateArticle() {
             />
 
             {/* Main Content */}
-            <main className="flex-1 bg-[#EFEEEB]">
+            <main className="flex-1 bg-[#EFEEEB] flex flex-col">
                 {/* Mobile menu toggle */}
                 <button 
                     onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -167,8 +167,8 @@ function CreateArticle() {
                     </div>
                 </div>
                 
-                <div className="px-8 py-3">
-                    <div className="space-y-8">
+                <div className="px-8 py-3 flex-1 flex flex-col">
+                    <div className="space-y-8 flex-1">
                         {/* Thumbnail Image Section */}
                         <div>
                             <p className="text-[#75716B] text-base font-medium mb-4">Thumbnail image</p>

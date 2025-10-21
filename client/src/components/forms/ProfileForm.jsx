@@ -120,6 +120,8 @@ export function ProfileForm() {
   }
 
   return (
+    <div className="min-h-screen bg-[#F9F8F6] flex flex-col">
+      
     <div className="flex flex-col mx-auto max-w-7xl">
       {/* Left Sidebar */}
       <div className="w-[800px] p-6">
@@ -254,6 +256,7 @@ export function ProfileForm() {
           </div>
         </form>
       </div>
+    </div>
     </div>
   );
 }

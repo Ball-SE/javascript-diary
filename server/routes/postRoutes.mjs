@@ -3,7 +3,7 @@ import { postValidations } from "../middlewares/postValidations.mjs";
 import multer from "multer";
 import protectAdmin from "../middlewares/protectAdmin.mjs";
 import { createClient } from "@supabase/supabase-js";
-import { enableRealtime } from "../middlewares/enableRealtime.mjs";
+import enableRealtime from "../middlewares/enableRealtime.mjs";
 
 // เชื่อมต่อ Supabase Client
 const supabase = createClient(
@@ -56,6 +56,7 @@ postRoutes.get("/", async (req, res) => {
         .select(`
           id, image, title, description, date, likes_count,
           categories(name),
+          statuses(status),
           users(name, profile_pic)
         `)
         .order('date', { ascending: false })
@@ -68,6 +69,7 @@ postRoutes.get("/", async (req, res) => {
         id: post.id,
         image: post.image,
         category: post.categories?.name,
+        status: post.statuses?.status,
         title: post.title,
         description: post.description,
         date: post.date,
@@ -102,7 +104,7 @@ postRoutes.get("/", async (req, res) => {
 });
 
 // Route สำหรับการสร้างโพสต์ใหม่
-postRoutes.post("/", [imageFileUpload, protectAdmin], async (req, res) => {
+postRoutes.post("/", [imageFileUpload, protectAdmin, enableRealtime], async (req, res) => {
   try {
     // 1) รับข้อมูลจาก request body และไฟล์ที่อัปโหลด
     const newPost = req.body;
@@ -110,7 +112,11 @@ postRoutes.post("/", [imageFileUpload, protectAdmin], async (req, res) => {
 
     // 2) กำหนด bucket และ path ที่จะเก็บไฟล์ใน Supabase
     const bucketName = "my-personal-blog";
-    const filePath = `posts/${Date.now()}_${file.originalname}`; // สร้าง path ที่ไม่ซ้ำกัน
+    const sanitizedFileName = file.originalname
+    .replace(/[^a-zA-Z0-9.-]/g, '_') // เปลี่ยนตัวอักษรพิเศษเป็น underscore
+    .replace(/\s+/g, '_'); // เปลี่ยน space เป็น underscore
+
+    const filePath = `posts/${Date.now()}_${sanitizedFileName}`;
 
     // 3) อัปโหลดไฟล์ไปยัง Supabase Storage
     const { data, error } = await supabase.storage
@@ -165,6 +171,51 @@ postRoutes.post("/", [imageFileUpload, protectAdmin], async (req, res) => {
       message: "Server could not create post",
       error: err.message,
     });
+  }
+});
+
+// Create new category
+postRoutes.post("/categories", protectAdmin, async (req, res) => {
+  try {
+      const { name } = req.body;
+      
+      if (!name || name.trim() === '') {
+        return res.status(400).json({ 
+          message: "Category name is required" 
+        });
+      }
+      
+      // Check if category already exists
+      const { data: existingCategory, error: checkError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', name.trim())
+        .maybeSingle();
+      
+      if (checkError) throw checkError;
+      
+      if (existingCategory) {
+        return res.status(409).json({ 
+          message: "Category already exists" 
+        });
+      }
+      
+      // Create new category
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([{ name: name.trim() }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      res.status(201).json(data);
+  } catch (error) {
+      console.error("Database error:", error);
+      res.status(500).json({ 
+        message: "Server could not create category",
+        error: error.message
+      });
   }
 });
 
@@ -546,8 +597,6 @@ postRoutes.delete("/:postId", async (req, res) => {
       });
     }
 });
-
-export default postRoutes;
  
 // Comments endpoints
 postRoutes.get("/:postId/comments", async (req, res) => {
@@ -757,3 +806,6 @@ postRoutes.put("/admin/notifications/read-all", async (req, res) => {
     res.status(500).json({ message: 'Failed to mark all notifications as read', error: error.message });
   }
 });
+
+
+export default postRoutes;
