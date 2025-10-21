@@ -96,9 +96,9 @@ export function ResetPassForm() {
   return (
     <div className="min-h-screen bg-[#F9F8F6] flex flex-col">
       <Navbar />
-      <div className="flex flex-col mx-auto max-w-7xl">
-        {/* Left Sidebar */}
-        <div className="w-[800px] p-6">
+      <div className="flex flex-col w-full mx-auto max-w-7xl">
+      {/* Left Sidebar */}
+      <div className="w-full sm:w-[800px] p-6">
           {/* Profile Header */}
           <div className="flex items-center gap-4 mb-2">
             <img
@@ -108,7 +108,7 @@ export function ResetPassForm() {
             />
             <div className="flex items-center gap-2">
               <span className="text-2xl font-semibold text-[#75716B]">
-                {state.user?.username || "User"}
+                {state.user?.name || "User"}
               </span>
               <span className="text-[#DAD6D1]">|</span>
               <span className="text-2xl font-semibold text-[#26231E]">
@@ -119,8 +119,9 @@ export function ResetPassForm() {
         </div>
 
         {/* Navigation Menu */}
-        <div className="flex flex-row gap-8">
-          <nav className="min-w-auto space-y-2">
+        <div className="flex flex-col lg:flex-row gap-8">
+        {/* Mobile: Horizontal navigation at top, Desktop: Vertical sidebar */}
+        <nav className="flex flex-row lg:flex-col lg:min-w-auto space-x-4 lg:space-x-0 lg:space-y-2">
             <div className="flex items-center gap-3 p-3 text-gray-400 hover:text-gray-600 transition-colors">
               <svg
                 className="w-5 h-5 text-[#26231E]"

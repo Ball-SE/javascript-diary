@@ -12,12 +12,16 @@ import {
 } from "@/components/ui/select.jsx";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePosts } from "../../hooks/usePosts";
+import { Skeleton } from "@mui/material";
 
 function ArticleSection() {
+  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
   const [allCategories, setAllCategories] = useState([]);
   const [keyword, setKeyword] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
   // ใช้ custom hooks
   const { 
@@ -72,6 +76,12 @@ function ArticleSection() {
       })
     : filteredPosts;
 
+  const titleSuggestions = normalizedKeyword
+    ? filteredPosts
+        .filter((p) => (p.title || "").toLowerCase().includes(normalizedKeyword))
+        .slice(0, 6)
+    : [];
+
   // State สำหรับแสดงผล 6 รายการแรก
   const [showAll, setShowAll] = useState(false);
   const displayPosts = showAll ? searchFilteredPosts : searchFilteredPosts.slice(0, 6);
@@ -112,9 +122,36 @@ function ArticleSection() {
             placeholder="Search"
             className="w-full sm:w-[360px] h-[48px] gap-[4px] border border-[#DAD6D1] rounded-[8px] pt-[12px] pr-[48px] pb-[12px] pl-[16px] bg-[#FFFFFF] font-medium text-base text-[#75716B]"
             value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setShowSuggestions(Boolean(e.target.value.trim()));
+            }}
+            onFocus={() => setShowSuggestions(Boolean(keyword.trim()))}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
           />
           <Search className="absolute right-3 top-1/2 transform -translate-y-3 text-[#75716B] w-[24px] h-[24px]" />
+
+          {showSuggestions && titleSuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 mt-2 bg-white rounded-md shadow-md border border-[#E8E6E2] z-20">
+              <ul className="py-2 max-h-[320px] overflow-auto">
+                {titleSuggestions.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-[#F5F4F2] text-[#26231E]"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setShowSuggestions(false);
+                        setKeyword("");
+                        navigate(`/post/${p.id}`);
+                      }}
+                    >
+                      {p.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <Select className="sm:hidden w-[343px] h-[76px] gap-[4px] " onValueChange={handleSelectChange} value={selectedCategory}>
@@ -135,8 +172,28 @@ function ArticleSection() {
         </Select>
       </div>
 
-      {/* แสดง loading หรือ error */}
-      {postsLoading && <div className="text-center py-8">Loading posts...</div>}
+      {/* แสดง skeleton loading */}
+      {postsLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full pt-[20px]">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="flex flex-col gap-4 p-[10px]">
+              <Skeleton variant="rectangular" height={212} sx={{ borderRadius: 2 }} />
+              <div className="flex flex-col gap-2">
+                <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 3 }} />
+                <Skeleton variant="text" height={32} />
+                <Skeleton variant="text" height={20} />
+                <Skeleton variant="text" height={20} width="80%" />
+                <div className="flex items-center gap-2">
+                  <Skeleton variant="circular" width={32} height={32} />
+                  <Skeleton variant="text" width={100} height={16} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* แสดง error */}
       {postsError && <div className="text-center py-8 text-red-500">Error: {postsError}</div>}
       
       {/* แสดง posts */}

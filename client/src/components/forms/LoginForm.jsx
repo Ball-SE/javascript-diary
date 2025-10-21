@@ -33,10 +33,10 @@ function LogInForm(){
 
     return (
         <div className="bg-[#F9F8F6] min-h-screen flex items-center justify-center px-4">
-            <form className="bg-[#EFEEEB] rounded-lg p-8 w-[50%] shadow-lg" onSubmit={handleLogIn}>
+            <form className="bg-[#EFEEEB] rounded-lg p-8 sm:w-[50%] shadow-lg" onSubmit={handleLogIn}>
                 <h2 className="text-4xl font-semibold text-[#26231E] text-center mb-8">Log in</h2>
                 
-                <div className="space-y-6 px-20">
+                <div className="space-y-6 sm:px-20">
                     <div>
                         <label htmlFor="email" className="block text-base font-medium text-[#75716B] mb-2">
                             Email
@@ -70,7 +70,7 @@ function LogInForm(){
                     <div className="flex justify-center">
                         <button 
                             type="submit"
-                            className="bg-[#26231E] w-[30%] text-white py-3 px-4 rounded-full font-medium cursor-pointer"
+                            className="bg-[#26231E] sm:w-[30%] text-white py-3 px-4 rounded-full font-medium cursor-pointer"
                         >
                             Log in
                         </button>

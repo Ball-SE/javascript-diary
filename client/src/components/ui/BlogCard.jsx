@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {Link} from "react-router-dom";
 import heroImage from "../../assets/images/image.jpg";
 import axios from "axios";
+import { Skeleton } from "@mui/material";
 
 function BlogCard({ categories }) {
   const [posts, setPosts] = useState([]);
@@ -54,7 +55,21 @@ function BlogCard({ categories }) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full pt-[20px]">
-        <p>Loading...</p>
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="flex flex-col gap-4 p-[10px]">
+            <Skeleton variant="rectangular" height={212} sx={{ borderRadius: 2 }} />
+            <div className="flex flex-col gap-2">
+              <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 3 }} />
+              <Skeleton variant="text" height={32} />
+              <Skeleton variant="text" height={20} />
+              <Skeleton variant="text" height={20} width="80%" />
+              <div className="flex items-center gap-2">
+                <Skeleton variant="circular" width={32} height={32} />
+                <Skeleton variant="text" width={100} height={16} />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

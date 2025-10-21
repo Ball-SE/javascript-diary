@@ -122,9 +122,9 @@ export function ProfileForm() {
   return (
     <div className="min-h-screen bg-[#F9F8F6] flex flex-col">
       
-    <div className="flex flex-col mx-auto max-w-7xl">
+    <div className="flex flex-col w-full mx-auto max-w-7xl">
       {/* Left Sidebar */}
-      <div className="w-[800px] p-6">
+      <div className="w-full sm:w-[800px] p-6">
         {/* Profile Header */}
         <div className="flex items-center gap-4 mb-2">
           <img
@@ -145,8 +145,9 @@ export function ProfileForm() {
       </div>
 
       {/* Navigation Menu */}
-      <div className="flex flex-row gap-8">
-        <nav className="min-w-auto space-y-2">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Mobile: Horizontal navigation at top, Desktop: Vertical sidebar */}
+        <nav className="flex flex-row lg:flex-col lg:min-w-auto space-x-4 lg:space-x-0 lg:space-y-2">
           <div className="flex items-center gap-3 p-3 rounded-lg">
             <svg
               className="w-5 h-5 text-[#26231E]"
@@ -175,9 +176,9 @@ export function ProfileForm() {
           </div>
         </nav>
 
-        <form className="flex flex-col w-full max-w-2xl bg-[#EFEEEB] gap-4 mb-4 p-8" onSubmit={handleSaveProfile}>
+        <form className="flex flex-col w-full  sm:max-w-2xl bg-[#EFEEEB] gap-4 mb-4 p-8 overflow-x-hidden" onSubmit={handleSaveProfile}>
           {/* Profile Picture Section */}
-          <div className="flex items-center gap-4 mb-3">
+          <div className="sm:flex sm:flex-row flex-col text-center items-center gap-4 mb-3">
             <img
               src={
                 imageFile && imageFile instanceof File
@@ -185,7 +186,7 @@ export function ProfileForm() {
                   : user.profilePic || moodeng
               }
               alt="picture"
-              className="w-20 h-20 rounded-full object-cover"
+              className="w-20 h-20 rounded-full mb-5 sm:mx-0 mx-auto object-cover"
             />
             <input 
             className="px-4 py-2 text-base font-medium border border-[#75716B] bg-[#FFFFFF] rounded-full hover:bg-gray-300 transition-colors"
