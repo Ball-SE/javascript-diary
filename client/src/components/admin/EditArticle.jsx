@@ -99,7 +99,7 @@ function EditArticle() {
     };
 
     const submitArticle = async (statusKey) => {
-        if (!title || !introduction || !content || !selectedCategory || !thumbnailFile) {
+        if (!title || !introduction || !content || !selectedCategory || (!thumbnailFile && !thumbnailPreview)) {
             toast.error('Missing fields', { description: 'Please fill all fields and upload a thumbnail.', position: 'bottom-right' });
             return;
         }
@@ -112,16 +112,19 @@ function EditArticle() {
 
         try {
             setSubmitting(true);
-            const form = new FormData();
-            form.append('imageFile', thumbnailFile);
-            form.append('title', title);
-            form.append('category_id', selectedCategory);
-            form.append('description', introduction);
-            form.append('content', content);
-            form.append('status_id', String(statusId));
+            
+            // ส่งข้อมูลเป็น JSON แทน FormData
+            const updateData = {
+                title: title,
+                category_id: parseInt(selectedCategory), // แปลงเป็น number
+                description: introduction,
+                content: content,
+                status_id: parseInt(statusId), // แปลงเป็น number
+                image: thumbnailPreview || '' // ใช้รูปเดิม หรือ string ว่าง
+            };
 
-            await axios.post(`${API_BASE_URL}/posts`, form, {
-                headers: { /* let browser set Content-Type boundary */ },
+            await axios.put(`${API_BASE_URL}/posts/${postId}`, updateData, {
+                headers: { 'Content-Type': 'application/json' },
             });
             toast.success('Article saved', { description: statusKey === 'publish' ? 'Published successfully' : 'Saved as draft', position: 'bottom-right' });
             navigate('/admin');
@@ -189,7 +192,7 @@ function EditArticle() {
 
                 {/* Header */}
                 <div className="w-full flex justify-between items-center mb-6 border-b-2 border-gray-200 p-8">
-                    <h3 className="text-2xl font-semibold text-[#26231E]">Create Article</h3>
+                    <h3 className="text-2xl font-semibold text-[#26231E]">Edit Article</h3>
                     <div className="flex gap-4">
                     <Button disabled={submitting} onClick={() => submitArticle('draft')} className="flex items-center gap-2 rounded-full bg-white text-[#26231E] border border-[#26231E] hover:bg-gray-50 cursor-pointer">
                         Save as draft

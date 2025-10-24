@@ -14,7 +14,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePosts } from "../../hooks/usePosts";
-import { Skeleton } from "@mui/material";
+import { Loading } from "./Loading";
 
 function ArticleSection() {
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ function ArticleSection() {
         const names = (catRes.data?.categories || []).map((c) => c.name);
         const presentSet = new Set((postsRes.data?.posts || []).map((p) => p.category).filter(Boolean));
         const filtered = names.filter((n) => presentSet.has(n));
-        setAllCategories(["all", ...filtered]);
+        setAllCategories([...filtered]);
       } catch (err) {
         console.error("Failed to load categories", err);
       }
@@ -174,22 +174,8 @@ function ArticleSection() {
 
       {/* แสดง skeleton loading */}
       {postsLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full pt-[20px]">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex flex-col gap-4 p-[10px]">
-              <Skeleton variant="rectangular" height={212} sx={{ borderRadius: 2 }} />
-              <div className="flex flex-col gap-2">
-                <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 3 }} />
-                <Skeleton variant="text" height={32} />
-                <Skeleton variant="text" height={20} />
-                <Skeleton variant="text" height={20} width="80%" />
-                <div className="flex items-center gap-2">
-                  <Skeleton variant="circular" width={32} height={32} />
-                  <Skeleton variant="text" width={100} height={16} />
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="flex justify-center items-center py-20">
+          <Loading className="w-80 h-80" />
         </div>
       )}
       
