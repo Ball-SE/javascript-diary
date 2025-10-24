@@ -43,64 +43,66 @@ postRoutes.get("/test-db", async (req, res) => {
 });
 
 postRoutes.get("/", async (req, res) => {
-    try {
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 6;
-      const safePage = Math.max(1, page);
-      const safeLimit = Math.max(1, Math.min(50, limit)); // ลด max limit
-      const offset = (safePage - 1) * safeLimit;
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 6;
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(50, limit));
+    const offset = (safePage - 1) * safeLimit;
 
-      // Query เฉพาะข้อมูลที่จำเป็น
-      const { data: posts, error } = await supabase
-        .from('posts')
-        .select(`
-          id, image, title, description, date, likes_count,
-          categories(name),
-          statuses(status),
-          users(name, profile_pic)
-        `)
-        .order('date', { ascending: false })
-        .range(offset, offset + safeLimit - 1);
+    // Query เฉพาะข้อมูลที่จำเป็น และกรองเฉพาะสถานะ publish
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select(`
+        id, image, title, description, date, likes_count,
+        categories(name),
+        statuses!inner(status),
+        users(name, profile_pic)
+      `)
+      .eq('statuses.status', 'publish')
+      .order('date', { ascending: false })
+      .range(offset, offset + safeLimit - 1);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // Format ข้อมูลแบบง่าย
-      const formattedPosts = posts?.map(post => ({
-        id: post.id,
-        image: post.image,
-        category: post.categories?.name,
-        status: post.statuses?.status,
-        title: post.title,
-        description: post.description,
-        date: post.date,
-        likes_count: post.likes_count,
-        author: post.users?.name,
-        author_pic: post.users?.profile_pic,
-      })) || [];
+    // Format ข้อมูลแบบง่าย
+    const formattedPosts = posts?.map(post => ({
+      id: post.id,
+      image: post.image,
+      category: post.categories?.name,
+      status: post.statuses?.status,
+      title: post.title,
+      description: post.description,
+      date: post.date,
+      likes_count: post.likes_count,
+      author: post.users?.name,
+      author_pic: post.users?.profile_pic,
+    })) || [];
 
-      // นับจำนวนทั้งหมด
-      const { count } = await supabase
-        .from('posts')
-        .select('*', { count: 'exact', head: true });
+    // นับจำนวนทั้งหมดเฉพาะบทความที่ publish
+    const { count } = await supabase
+      .from('posts')
+      .select('*, statuses!inner(status)', { count: 'exact', head: true })
+      .eq('statuses.status', 'publish');
 
-      const totalPosts = count || 0;
+    const totalPosts = count || 0;
 
-      res.json({
-        totalPosts,
-        totalPages: Math.ceil(totalPosts / safeLimit),
-        currentPage: safePage,
-        limit: safeLimit,
-        posts: formattedPosts,
-        nextPage: offset + safeLimit < totalPosts ? safePage + 1 : null
-      });
+    res.json({
+      totalPosts,
+      totalPages: Math.ceil(totalPosts / safeLimit),
+      currentPage: safePage,
+      limit: safeLimit,
+      posts: formattedPosts,
+      nextPage: offset + safeLimit < totalPosts ? safePage + 1 : null
+    });
 
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      res.status(500).json({
-        message: "Server error",
-        error: error.message
-      });
-    }
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
+  }
 });
 
 // Route สำหรับการสร้างโพสต์ใหม่
@@ -520,9 +522,20 @@ postRoutes.post("/:postId/like", async (req, res) => {
 postRoutes.put("/:postId", [postValidations], async (req, res) => {
     const { postId } = req.params;
     const { title, image, category_id, description, content, status_id } = req.body;
-    const currentDate = new Date();
   
     try {
+      // ตรวจสอบว่า status_id นี้เป็น publish หรือไม่
+      const { data: statusData, error: statusError } = await supabase
+        .from('statuses')
+        .select('status')
+        .eq('id', status_id)
+        .single();
+      
+      if (statusError) throw statusError;
+      
+      const currentDate = new Date();
+      const isPublishStatus = statusData?.status === 'publish';
+      
       const { data, error } = await supabase
         .from('posts')
         .update({
@@ -532,7 +545,8 @@ postRoutes.put("/:postId", [postValidations], async (req, res) => {
           description: description,
           content: content,
           status_id: status_id,
-          date: currentDate
+          // อัพเดท date เฉพาะเมื่อ status เป็น publish
+          ...(isPublishStatus ? { date: currentDate } : {})
         })
         .eq('id', postId)
         .select();
@@ -804,6 +818,67 @@ postRoutes.put("/admin/notifications/read-all", async (req, res) => {
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
     res.status(500).json({ message: 'Failed to mark all notifications as read', error: error.message });
+  }
+});
+
+postRoutes.get("/admin/all", protectAdmin, async (req, res) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 100;
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(100, limit));
+    const offset = (safePage - 1) * safeLimit;
+
+    // Query ข้อมูลทั้งหมดสำหรับ admin (รวม draft และ publish)
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select(`
+        id, image, title, description, date, likes_count,
+        categories(name),
+        statuses(status),
+        users(name, profile_pic)
+      `)
+      .order('date', { ascending: false })
+      .range(offset, offset + safeLimit - 1);
+
+    if (error) throw error;
+
+    // Format ข้อมูลแบบง่าย
+    const formattedPosts = posts?.map(post => ({
+      id: post.id,
+      image: post.image,
+      category: post.categories?.name,
+      status: post.statuses?.status,
+      title: post.title,
+      description: post.description,
+      date: post.date,
+      likes_count: post.likes_count,
+      author: post.users?.name,
+      author_pic: post.users?.profile_pic,
+    })) || [];
+
+    // นับจำนวนทั้งหมด
+    const { count } = await supabase
+      .from('posts')
+      .select('*', { count: 'exact', head: true });
+
+    const totalPosts = count || 0;
+
+    res.json({
+      totalPosts,
+      totalPages: Math.ceil(totalPosts / safeLimit),
+      currentPage: safePage,
+      limit: safeLimit,
+      posts: formattedPosts,
+      nextPage: offset + safeLimit < totalPosts ? safePage + 1 : null
+    });
+
+  } catch (error) {
+    console.error("Error fetching all posts:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
   }
 });
 

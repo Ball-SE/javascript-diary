@@ -70,7 +70,7 @@ function AdminPanel() {
         setError(null);
         try {
             // ส่ง limit=100 เพื่อดึงข้อมูลทั้งหมด (หรือมากที่สุดเท่าที่เป็นไปได้)
-            const response = await axios.get(`${API_BASE_URL}/posts?limit=100`);
+            const response = await axios.get(`${API_BASE_URL}/posts/admin/all?limit=100`);
             
             if (response.data && response.data.posts) {
                 // สร้าง categories และ statuses จากข้อมูลที่ได้
