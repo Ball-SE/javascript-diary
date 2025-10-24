@@ -165,6 +165,25 @@ postRoutes.post("/", [imageFileUpload, protectAdmin, enableRealtime], async (req
       throw insertError;
     }
 
+    // 5.5) สร้าง notification เมื่อมีโพสต์ใหม่
+    try {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: null, // สำหรับ public notifications
+          type: 'article',
+          title: 'New Article Published',
+          message: 'Published new article.',
+          post_id: insertedPost[0].id,
+          author_id: userId
+        });
+      
+      console.log('Notification created for new post');
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // ไม่ให้ notification error ทำให้การสร้างโพสต์ล้มเหลว
+    }
+
     // 6) ส่งผลลัพธ์กลับไปยัง client
     return res.status(201).json({ message: "Created post successfully" });
   } catch (err) {

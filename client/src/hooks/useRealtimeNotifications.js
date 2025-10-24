@@ -1,83 +1,45 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from './useAuth';
 
 export function useRealtimeNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { state } = useAuth();
 
   // Fetch initial notifications
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
-      if (state.user) {
-        // ดึงข้อมูลแจ้งเตือนสำหรับ user ที่ login
-        const { data, error } = await supabase
-          .from('notifications')
-          .select(`
-            id, type, title, message, post_id, is_read, created_at,
-            posts(id, title),
-            users!notifications_author_id_fkey(name, profile_pic)
-          `)
-          .eq('user_id', state.user.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
-  
-        if (error) {
-          console.error('Error fetching notifications:', error);
-          setNotifications([]);
-        } else {
-          const formattedNotifications = data.map(notif => ({
-            id: notif.id,
-            type: notif.type,
-            user: {
-              name: notif.users?.name || 'Unknown',
-              avatar: notif.users?.profile_pic || '/src/assets/images/jacob.jpg'
-            },
-            message: notif.message,
-            timestamp: formatTimestamp(notif.created_at),
-            postTitle: notif.posts?.title,
-            postId: notif.post_id,
-            isRead: notif.is_read
-          }));
-          
-          setNotifications(formattedNotifications);
-          console.log('Notifications loaded from database:', formattedNotifications.length);
-        }
+      // ดึงข้อมูลแจ้งเตือนจากฐานข้อมูล (ทั้งสำหรับ user ที่ login และ public)
+      const { data, error } = await supabase
+        .from('notifications')
+        .select(`
+          id, type, title, message, post_id, is_read, created_at,
+          posts(id, title),
+          users!notifications_author_id_fkey(name, profile_pic)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        setNotifications([]);
       } else {
-        // ดึงข้อมูลแจ้งเตือนสำหรับ user ที่ไม่ login (public notifications)
-        const { data, error } = await supabase
-          .from('notifications')
-          .select(`
-            id, type, title, message, post_id, created_at,
-            posts(id, title),
-            users!notifications_author_id_fkey(name, profile_pic)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(10);
-  
-        if (error) {
-          console.error('Error fetching public notifications:', error);
-          setNotifications([]);
-        } else {
-          const formattedNotifications = data.map(notif => ({
-            id: notif.id,
-            type: notif.type,
-            user: {
-              name: notif.users?.name || 'Unknown',
-              avatar: notif.users?.profile_pic || '/src/assets/images/jacob.jpg'
-            },
-            message: notif.message,
-            timestamp: formatTimestamp(notif.created_at),
-            postTitle: notif.posts?.title,
-            postId: notif.post_id,
-            isRead: false
-          }));
-          
-          setNotifications(formattedNotifications);
-          console.log('Public notifications loaded:', formattedNotifications.length);
-        }
+        const formattedNotifications = data.map(notif => ({
+          id: notif.id,
+          type: notif.type,
+          user: {
+            name: notif.users?.name || 'Unknown',
+            avatar: notif.users?.profile_pic || '/src/assets/images/jacob.jpg'
+          },
+          message: notif.message,
+          timestamp: formatTimestamp(notif.created_at),
+          postTitle: notif.posts?.title,
+          postId: notif.post_id,
+          isRead: notif.is_read || false
+        }));
+        
+        setNotifications(formattedNotifications);
+        console.log('Notifications loaded from database:', formattedNotifications.length);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -85,7 +47,7 @@ export function useRealtimeNotifications() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Format timestamp
   const formatTimestamp = (timestamp) => {
@@ -111,6 +73,32 @@ export function useRealtimeNotifications() {
     });
   };
 
+
+  // Mark notification as read
+  const markAsRead = async (notificationId) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId 
+            ? { ...notif, isRead: true }
+            : notif
+        )
+      );
+      
+      console.log('Notification marked as read');
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
   // Set up real-time subscriptions
   useEffect(() => {
     // if (!state.user) return;
@@ -120,7 +108,6 @@ export function useRealtimeNotifications() {
 
     console.log('Setting up Supabase realtime subscription...');
     console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-    console.log('Current user:', state.user.name);
     
     // Test Supabase connection
     supabase.from('posts').select('count').then(({ data, error }) => {
@@ -137,73 +124,38 @@ export function useRealtimeNotifications() {
       console.log('🧪 Test channel status:', status);
     });
 
-    // Subscribe to new posts
-    const postsSubscription = supabase
-    .channel('posts')
+    // Subscribe to new notifications
+    const notificationsSubscription = supabase
+    .channel('notifications')
     .on('postgres_changes', 
         { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'posts' 
+        table: 'notifications' 
         }, 
         (payload) => {
-        console.log('🔥 NEW POST DETECTED:', payload);
+        console.log('🔔 NEW NOTIFICATION DETECTED:', payload);
         
-        // Get post details with author info
-        supabase
-            .from('posts')
-            .select(`
-            id, title, date, user_id,
-            users(name, profile_pic)
-            `)
-            .eq('id', payload.new.id)
-            .single()
-            .then(({ data: postData, error }) => {
-            if (error) {
-                console.error('Error fetching post details:', error);
-                return;
-            }
-
-            console.log('Post data:', postData);
-            
-            // แสดงแจ้งเตือน realtime (ไม่สร้างในฐานข้อมูล)
-            if (postData.users) {
-                // อัปเดต state สำหรับ user ปัจจุบัน
-                if (state.user && postData.user_id !== state.user.id) {
-                const newNotification = {
-                    id: `article-${postData.id}`,
-                    type: 'article',
-                    user: {
-                    name: postData.users.name,
-                    avatar: postData.users.profile_pic || '/src/assets/images/jacob.jpg'
-                    },
-                    message: 'Published new article.',
-                    timestamp: formatTimestamp(postData.date),
-                    postTitle: postData.title,
-                    postId: postData.id
-                };
-
-                setNotifications(prev => [newNotification, ...prev.slice(0, 4)]);
-                console.log('✅ New notification added to state:', newNotification);
-                }
-            }
-            });
+        // อัปเดต state โดยดึงข้อมูลใหม่จากฐานข้อมูล
+        fetchNotifications();
+        console.log('✅ Notifications updated from database');
         }
     )
     .subscribe((status) => {
-        console.log('Subscription status:', status);
+        console.log('Notifications subscription status:', status);
     });
 
     // Cleanup subscriptions
     return () => {
       console.log('Cleaning up subscription...');
-      postsSubscription.unsubscribe();
+      notificationsSubscription.unsubscribe();
     };
-  }, [state.user]);
+  }, [fetchNotifications]);
 
   return {
     notifications,
     loading,
-    fetchNotifications
+    fetchNotifications,
+    markAsRead
   };
 }

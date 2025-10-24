@@ -4,27 +4,22 @@ import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications';
 
 export function NotiUser() {
     const [isOpen, setIsOpen] = useState(false);
-    const [readNotifications, setReadNotifications] = useState(new Set());
-    const { notifications, loading } = useRealtimeNotifications();
+    const { notifications, loading, markAsRead } = useRealtimeNotifications();
     
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
-    
-    // Calculate unread notifications count
-    const unreadCount = notifications.filter(notif => !readNotifications.has(notif.id)).length;
+    // Calculate unread notifications count based on database isRead status
+    const unreadCount = notifications.filter(notif => !notif.isRead).length;
 
     const toggleNotifications = () => {
         setIsOpen(!isOpen);
         
         // Mark all notifications as read when opening the dropdown
         if (!isOpen && notifications.length > 0) {
-            const allNotificationIds = notifications.map(notif => notif.id);
-            setReadNotifications(new Set(allNotificationIds));
+            notifications.forEach(notif => {
+                if (!notif.isRead) {
+                    markAsRead(notif.id);
+                }
+            });
         }
-    };
-    
-    // Mark a specific notification as read
-    const markAsRead = (notificationId) => {
-        setReadNotifications(prev => new Set([...prev, notificationId]));
     };
 
     return (
@@ -58,11 +53,13 @@ export function NotiUser() {
                                 <div 
                                     key={notification.id}
                                     className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${
-                                        readNotifications.has(notification.id) ? 'opacity-60' : 'bg-blue-50'
+                                        notification.isRead ? 'opacity-60' : 'bg-blue-50'
                                     }`}
                                     onClick={() => {
                                         // Mark as read when clicked
-                                        markAsRead(notification.id);
+                                        if (!notification.isRead) {
+                                            markAsRead(notification.id);
+                                        }
                                         
                                         // Navigate to the post when notification is clicked
                                         if (notification.postId) {
