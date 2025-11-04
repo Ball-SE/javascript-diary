@@ -505,11 +505,13 @@ postRoutes.post("/:postId/like", async (req, res) => {
         .eq('id', existing.id);
       if (delErr) throw delErr;
 
-      await supabase.rpc('decrement_likes_count', { target_post_id: Number(postId) }).catch(async () => {
+      const { error: rpcErr } = await supabase.rpc('decrement_likes_count', { target_post_id: Number(postId) });
+      if (rpcErr) {
+        // Fallback: update manually if RPC fails
         const { data: postRow } = await supabase.from('posts').select('likes_count').eq('id', postId).single();
         const next = Math.max(0, (postRow?.likes_count || 0) - 1);
         await supabase.from('posts').update({ likes_count: next }).eq('id', postId);
-      });
+      }
       liked = false;
     } else {
       // Like
@@ -518,11 +520,13 @@ postRoutes.post("/:postId/like", async (req, res) => {
         .insert([{ post_id: Number(postId), user_id: userId }]);
       if (insErr) throw insErr;
 
-      await supabase.rpc('increment_likes_count', { target_post_id: Number(postId) }).catch(async () => {
+      const { error: rpcErr } = await supabase.rpc('increment_likes_count', { target_post_id: Number(postId) });
+      if (rpcErr) {
+        // Fallback: update manually if RPC fails
         const { data: postRow } = await supabase.from('posts').select('likes_count').eq('id', postId).single();
         const next = (postRow?.likes_count || 0) + 1;
         await supabase.from('posts').update({ likes_count: next }).eq('id', postId);
-      });
+      }
       liked = true;
     }
 
